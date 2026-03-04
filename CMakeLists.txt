@@ -23,6 +23,8 @@ set(SOURCES
 )
 
 qt_add_executable(ReportAssistant ${SOURCES})
+# Avoid conflict: linker outputs exe to bin/; POST_BUILD copies resources to bin/resources/
+set_target_properties(ReportAssistant PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 qt_add_qml_module(ReportAssistant
     URI ReportAssistant

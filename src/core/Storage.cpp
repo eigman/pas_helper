@@ -1,4 +1,5 @@
 #include "Storage.h"
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>

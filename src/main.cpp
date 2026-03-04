@@ -3,6 +3,7 @@
 #include <QQmlContext>
 #include <QDir>
 #include <QQuickStyle>
+#include <QQuickWindow>
 
 #include "core/AppController.h"
 

@@ -1,0 +1,46 @@
+---
+description: C++ coding standards for report-assistant
+globs: src/**/*.{h,cpp}
+alwaysApply: false
+---
+
+# C++ Standards
+
+## Language & Style
+- C++17 strictly; no raw owning pointers — use `std::unique_ptr`, `QScopedPointer`, or Qt parent ownership
+- `#pragma once` in all headers, no include guards
+- One class per `.h`/`.cpp` pair, filename matches class name
+- `PascalCase` for classes, `camelCase` for methods and variables, `m_` prefix for private members
+- `SCREAMING_SNAKE_CASE` for constants and enum values
+
+## Qt Specifics
+- Signals/slots via `connect()` only — no old SIGNAL/SLOT macros
+- Use `Q_PROPERTY` for all fields exposed to QML; always declare `NOTIFY` signal
+- `Q_INVOKABLE` for methods callable from QML
+- Pass `QObject*` parent to all QObject-derived constructors
+- Use `Qt::UniqueConnection` when connecting in loops
+
+## QML Integration
+- Expose C++ objects to QML via `rootContext()->setContextProperty("name", object)`
+- List models inherit `QAbstractListModel` and implement `rowCount`, `data`, `roleNames`
+- Return `QVariantMap` / `QStringList` for simple data; use models for lists shown in ListView
+
+## Error Handling
+- File I/O returns `bool` success, emits `errorOccurred(QString message)` signal
+- No silent failures — always emit signal or return false with a reason
+
+## Example: Q_PROPERTY pattern
+```cpp
+// In header:
+Q_PROPERTY(QString deviceModel READ deviceModel WRITE setDeviceModel NOTIFY deviceModelChanged)
+QString m_deviceModel;
+
+// In cpp:
+QString deviceModel() const { return m_deviceModel; }
+void setDeviceModel(const QString& v) {
+    if (m_deviceModel == v) return;
+    m_deviceModel = v;
+    emit deviceModelChanged();
+    setModified(true);
+}
+```

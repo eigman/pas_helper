@@ -1,0 +1,48 @@
+---
+description: QML coding standards for report-assistant
+globs: src/ui/**/*.qml
+alwaysApply: false
+---
+
+# QML Standards
+
+## Style
+- Qt Quick Controls 2, `Material.Dark` theme, `Material.accent: Material.Teal`
+- `camelCase` for all `id:` values
+- Components in separate files under `src/ui/components/`
+- No business logic in QML — call `Q_INVOKABLE` C++ methods; only bindings and visual state in QML
+
+## Layout
+- Use `ColumnLayout`, `RowLayout`, `GridLayout` for responsive layouts
+- `anchors.fill: parent` for root items in a page/tab
+- `spacing: 12` as default; `topPadding/bottomPadding: 16` for content areas
+
+## Data Binding
+- Bind directly to `controller.*` context property: `text: controller.deviceModel`
+- Update via `onEditingFinished` or `onActivated`, not `onTextChanged` (avoid feedback loops)
+- Use `Connections { target: controller }` for signals from C++
+
+## Example: editable ComboBox+TextField combo
+```qml
+RowLayout {
+    ComboBox {
+        id: driverCombo
+        model: controller.driverPresets()
+        onActivated: controller.setCurrentSubsystemDriver(currentText)
+    }
+    TextField {
+        placeholderText: "или введите вручную"
+        onEditingFinished: controller.setCurrentSubsystemDriver(text)
+    }
+}
+```
+
+## File Operations (FileDialog)
+```qml
+FileDialog {
+    id: openDialog
+    title: "Открыть отчёт"
+    nameFilters: ["Отчёт (*.txt)", "Все файлы (*)"]
+    onAccepted: controller.openFile(selectedFile)
+}
+```

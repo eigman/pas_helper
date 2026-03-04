@@ -1,0 +1,38 @@
+# Build directories
+build/
+build-*/
+cmake-build-*/
+.cmake/
+
+# Qt / CMake generated
+*.moc
+*.qmlc
+*.jsc
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+
+# Compiled binary
+ReportAssistant
+ReportAssistant.exe
+
+# IDE
+.idea/
+.vscode/
+*.user
+*.creator.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Progress files (user-specific, don't commit)
+*.progress.json
+
+# pci.ids is large (~1.2MB), managed separately
+resources/pci.ids

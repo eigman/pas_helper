@@ -1,0 +1,57 @@
+---
+description: Project overview, architecture, and key terminology for report-assistant
+alwaysApply: true
+---
+
+# Report Assistant — Project Context
+
+## Purpose
+Desktop Linux application (Qt6 + QML + C++17) for interactively assembling hardware-software compatibility reports (ЗОСРВ «Нейтрино» QNX-based OS). The app produces `.txt` files in a custom markup format consumed by a Jenkins-based report generator.
+
+## Tech Stack
+- **UI**: Qt6 + QML + Qt Quick Controls 2 (Material Dark theme)
+- **Logic**: C++17 (`AppController`, `ReportEngine`, `ReportParser`, `PciAnalyzer`, `PresetManager`, `Storage`)
+- **Storage**: JSON files via `Qt JSON` — no SQLite on MVP
+- **Build**: CMake 3.20+
+- **Target OS**: Ubuntu/Debian Linux (cross-distro via AppImage)
+
+## Architecture
+- `AppController` (QObject) — main bridge between QML and C++, exposed via `rootContext()->setContextProperty`
+- `ReportEngine` — generates TXT markup from `ReportData` struct
+- `ReportParser` — parses existing TXT files back into `ReportData`
+- `PciAnalyzer` — parses QNX `pci -vvv` dump, looks up names in `pci.ids`
+- `PresetManager` — loads/saves JSON presets (subsystems, drivers, interfaces, checks)
+- `Storage` — reads/writes `.progress.json` alongside each `.txt` report file
+- `SubsystemModel`, `PciDeviceModel`, `WorkItemModel` — QAbstractListModel subclasses
+
+## Key Terminology
+- **PID** = PCI Vendor ID (e.g., `8086` = Intel)
+- **DID** = PCI Device ID (e.g., `7a62` = Raptor Lake SATA AHCI Controller)
+- **Кастомная верстка** = the `.txt` markup format consumed by Jenkins to generate PDFs
+- **Подсистема** = a hardware subsystem entry (Дисковая, Графическая, Сетевая, USB, Аудио, etc.)
+- `OS_NAME` and `OS_VERSION` are **static tags** — never replaced by the app, substituted by Jenkins
+
+## Report TXT Format (4 mandatory groups, in order)
+```
+@page "pas" <Title> (заводской номер <N>)
+@brief
+@par Содержание отчета: / @@item ...
+
+@group device    — device params table + subsystems table (Controller | Interface | Driver)
+@group report    — test results summary table (осинтаялция + all subsystems)
+@group tests     — detailed @dl/@term/@use blocks per subsystem
+@group recomendations — free text recommendations
+```
+- Unclosed `@table`, `@dl`, `@ul`, `@hint`, `@caution` → report generation fails
+- `\n` inside a table cell = line break in rendered PDF (literal two-char sequence)
+- Subsystem name in device table may contain `\n` (e.g., `Дисковая \n подсистема`)
+- Subsystem name in report table and `@term` uses plain name without `\n`
+
+## File Operations
+- Open TXT → `ReportParser` reconstructs all form fields
+- Save → `ReportEngine` regenerates TXT exactly
+- Progress → autosaved as `filename.progress.json` (form state + Work tab notes)
+
+## Current Status
+Phase: Initial setup — project structure + Cursor rules created.
+Next: Core C++ data structures and CMake build configuration.

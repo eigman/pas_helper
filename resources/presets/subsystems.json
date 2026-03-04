@@ -1,0 +1,113 @@
+{
+  "subsystems": [
+    {
+      "name": "Дисковая \\n подсистема",
+      "defaultChecks": [
+        "Определение накопителей на чтение/запись"
+      ]
+    },
+    {
+      "name": "Графическая \\n подсистема",
+      "defaultChecks": [
+        "Работоспособность конфигурации с единственным монитором"
+      ]
+    },
+    {
+      "name": "Сетевая подсистема",
+      "defaultChecks": [
+        "Работоспособность интерфейсов Ethernet"
+      ]
+    },
+    {
+      "name": "USB интерфейсы",
+      "defaultChecks": [
+        "Работоспособность каждого интерфейса USB"
+      ]
+    },
+    {
+      "name": "Подсистема ввода",
+      "defaultChecks": [
+        "Работоспособность USB-клавиатуры и мыши"
+      ]
+    },
+    {
+      "name": "Аудио подсистема",
+      "defaultChecks": [
+        "Воспроизведение аудио данных по интерфейсу OUT",
+        "Захват аудио данных по интерфейсу IN"
+      ]
+    },
+    {
+      "name": "Последовательные порты",
+      "defaultChecks": [
+        "Проверка передачи данных для каждого из портов в соответствующем режиме"
+      ]
+    },
+    {
+      "name": "Беспроводные интерфейсы",
+      "defaultChecks": [
+        "Работоспособность Wi-Fi адаптера",
+        "Работоспособность Bluetooth адаптера"
+      ]
+    }
+  ],
+  "drivers": [
+    "devb-ahci",
+    "devb-nvme",
+    "devg-flat.so",
+    "devg-skylake.so",
+    "devg-intel.so",
+    "devnp-realtek.so",
+    "devnp-rtl8169.so",
+    "devnp-e1000.so",
+    "devnp-e1000e.so",
+    "devnp-i40e.so",
+    "devu-xhci.so",
+    "devu-ehci.so",
+    "devh-usb.so",
+    "deva-ctrl-intel_hda.so",
+    "deva-mixer-hda.so",
+    "devc-ser8250",
+    "devc-serpl2303.so"
+  ],
+  "interfaces": [
+    "Serial ATA",
+    "NVMe",
+    "1x HDMI",
+    "1x HDMI 1.4",
+    "2x HDMI",
+    "1x VGA",
+    "1x DP",
+    "2x DP",
+    "1x DVI",
+    "1x Ethernet",
+    "2x Ethernet",
+    "4x Ethernet",
+    "4x USB 3.0",
+    "2x USB 3.0",
+    "7x USB 3.2",
+    "4x USB 3.2",
+    "4x USB 2.0",
+    "2x USB 2.0",
+    "2x USB Type-C",
+    "1x USB Type-C",
+    "USB",
+    "Audio in",
+    "2x Out",
+    "1x Out",
+    "1x RS-232/485",
+    "4x RS-232",
+    "2x RS-232",
+    "1x RS-232",
+    "1x RS-485"
+  ],
+  "osInstallChecks": [
+    "Запуск с USB-накопителя",
+    "Запуск в режиме UEFI",
+    "Ручная установка",
+    "Установка с USB-накопителя",
+    "Запуск в режиме LiveDVD",
+    "Запуск в режиме LiveUSB",
+    "Установка на SSD"
+  ]
+}

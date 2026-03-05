@@ -138,10 +138,12 @@ ApplicationWindow {
         modal: false
         interactive: true
 
-        PciPanel {
+        Loader {
             anchors.fill: parent
-            onAssignToSubsystem: function(pciIndex, subsystemIndex) {
-                controller.assignPciToSubsystem(pciIndex, subsystemIndex)
+            source: "qrc:/ReportAssistant/src/ui/components/PciPanel.qml"
+            onLoaded: {
+                if (item && item.assignToSubsystem)
+                    item.assignToSubsystem.connect(controller.assignPciToSubsystem)
             }
         }
     }

@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(QStringLiteral("controller"), &controller);
 
-    const QUrl url(QStringLiteral("qrc:/ReportAssistant/src/ui/main.qml"));
+    const QUrl url(QStringLiteral("qrc:/ReportAssistant/main.qml"));
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,

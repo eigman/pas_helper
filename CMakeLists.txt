@@ -26,6 +26,15 @@ qt_add_executable(ReportAssistant ${SOURCES})
 # Avoid conflict: linker outputs exe to bin/; POST_BUILD copies resources to bin/resources/
 set_target_properties(ReportAssistant PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+set_source_files_properties(src/ui/main.qml              PROPERTIES QT_RESOURCE_ALIAS main.qml)
+set_source_files_properties(src/ui/WorkTab.qml            PROPERTIES QT_RESOURCE_ALIAS WorkTab.qml)
+set_source_files_properties(src/ui/ReportTab.qml          PROPERTIES QT_RESOURCE_ALIAS ReportTab.qml)
+set_source_files_properties(src/ui/components/DeviceForm.qml            PROPERTIES QT_RESOURCE_ALIAS DeviceForm.qml)
+set_source_files_properties(src/ui/components/SubsystemsPage.qml        PROPERTIES QT_RESOURCE_ALIAS SubsystemsPage.qml)
+set_source_files_properties(src/ui/components/SubsystemDetail.qml       PROPERTIES QT_RESOURCE_ALIAS SubsystemDetail.qml)
+set_source_files_properties(src/ui/components/PciPanel.qml              PROPERTIES QT_RESOURCE_ALIAS PciPanel.qml)
+set_source_files_properties(src/ui/components/RecommendationsEditor.qml PROPERTIES QT_RESOURCE_ALIAS RecommendationsEditor.qml)
+
 qt_add_qml_module(ReportAssistant
     URI ReportAssistant
     VERSION 1.0

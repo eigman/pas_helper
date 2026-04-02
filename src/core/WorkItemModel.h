@@ -30,6 +30,7 @@ public:
     Q_INVOKABLE void removeItem(int index);
     Q_INVOKABLE void setDone(int index, bool done);
     Q_INVOKABLE void setText(int index, const QString& text);
+    Q_INVOKABLE bool isDone(int index) const;
 
     QList<WorkItem> items() const { return m_data; }
     void setItems(const QList<WorkItem>& items);

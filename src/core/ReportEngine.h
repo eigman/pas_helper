@@ -21,5 +21,6 @@ private:
                              const QList<CheckItem>& checks,
                              const QString& result,
                              const QString& hintText,
-                             const QString& cautionText);
+                             const QString& cautionText,
+                             const QString& warningText);
 };

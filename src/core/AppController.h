@@ -37,6 +37,7 @@ class AppController : public QObject {
     Q_PROPERTY(QStringList osCheckItems READ osCheckItems NOTIFY osInstallChanged)
     Q_PROPERTY(QString osHintText    READ osHintText    WRITE setOsHintText    NOTIFY osInstallChanged)
     Q_PROPERTY(QString osCautionText READ osCautionText WRITE setOsCautionText NOTIFY osInstallChanged)
+    Q_PROPERTY(QString osWarningText READ osWarningText WRITE setOsWarningText NOTIFY osInstallChanged)
 
     // ── Models ───────────────────────────────────────────────────────────────
     Q_PROPERTY(SubsystemModel*  subsystemModel READ subsystemModel  CONSTANT)
@@ -78,6 +79,7 @@ public:
 
     // ── Presets ──────────────────────────────────────────────────────────────
     Q_INVOKABLE QStringList subsystemNamePresets() const;
+    Q_INVOKABLE QString     iconForSubsystem(const QString& name) const;
     Q_INVOKABLE QStringList driverPresets() const;
     Q_INVOKABLE QStringList interfacePresets() const;
     Q_INVOKABLE QStringList checksPresets(const QString& subsystemName) const;
@@ -103,6 +105,7 @@ public:
     QStringList osCheckItems()  const;
     QString    osHintText()     const { return m_data.osInstall.hintText; }
     QString    osCautionText()  const { return m_data.osInstall.cautionText; }
+    QString    osWarningText()  const { return m_data.osInstall.warningText; }
 
     SubsystemModel* subsystemModel()  { return m_subsystemModel; }
     PciDeviceModel* pciModel()        { return m_pciModel; }
@@ -128,6 +131,7 @@ public:
     void setOsTestNote(const QString& v);
     void setOsHintText(const QString& v);
     void setOsCautionText(const QString& v);
+    void setOsWarningText(const QString& v);
 
     void setRecommendations(const QString& v);
     void setWorkNotes(const QString& v);

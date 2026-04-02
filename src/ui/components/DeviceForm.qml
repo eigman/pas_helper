@@ -4,245 +4,309 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 // Device parameters form — fills @group device first table + OS install section
-ScrollView {
+Item {
     id: root
-    clip: true
 
-    ColumnLayout {
-        width: root.width
-        spacing: 0
+    ScrollView {
+        anchors.fill: parent
+        contentWidth: availableWidth
+        clip: true
 
-        // Section header
-        Pane {
-            Layout.fillWidth: true
-            Material.elevation: 2
+        ColumnLayout {
+            width: parent.width
+            spacing: 0
 
-            RowLayout {
-                anchors.fill: parent
+            // ── Page header ───────────────────────────────────────────────────
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 60
+                color: "white"
+
+                Rectangle {
+                    anchors.bottom: parent.bottom
+                    width: parent.width
+                    height: 1
+                    color: "#E5E7EB"
+                }
+
                 Label {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.leftMargin: 32
                     text: "Технические параметры устройства"
-                    font.pixelSize: 16
-                    font.bold: true
-                    Layout.fillWidth: true
-                }
-                Label {
-                    text: controller.devicePageTitle !== "" ? controller.devicePageTitle : "Новый отчёт"
-                    font.pixelSize: 13
-                    opacity: 0.7
-                }
-            }
-        }
-
-        // Device fields
-        GridLayout {
-            Layout.fillWidth: true
-            Layout.margins: 24
-            columns: 2
-            rowSpacing: 8
-            columnSpacing: 16
-
-            Label { text: "Название устройства"; opacity: 0.8 }
-            TextField {
-                Layout.fillWidth: true
-                placeholderText: "напр. ПК KVADRA TAU"
-                text: controller.devicePageTitle
-                onEditingFinished: controller.devicePageTitle = text
-            }
-
-            Label { text: "Модель"; opacity: 0.8 }
-            TextField {
-                Layout.fillWidth: true
-                placeholderText: "напр. KVADRA TAU"
-                text: controller.deviceModel
-                onEditingFinished: controller.deviceModel = text
-            }
-
-            Label { text: "Серийный / Заводской номер"; opacity: 0.8 }
-            TextField {
-                Layout.fillWidth: true
-                placeholderText: "напр. 0310230010"
-                text: controller.deviceSerial
-                onEditingFinished: controller.deviceSerial = text
-            }
-
-            Label { text: "Материнская плата"; opacity: 0.8 }
-            TextField {
-                Layout.fillWidth: true
-                placeholderText: "напр. KVADRA B760"
-                text: controller.deviceMotherboard
-                onEditingFinished: controller.deviceMotherboard = text
-            }
-
-            Label { text: "Тип BIOS (версия)"; opacity: 0.8 }
-            TextField {
-                Layout.fillWidth: true
-                placeholderText: "напр. KVADRA UEFI BIOS Firmware v1.3.1"
-                text: controller.deviceBios
-                onEditingFinished: controller.deviceBios = text
-            }
-
-            Label { text: "Процессор"; opacity: 0.8 }
-            TextField {
-                Layout.fillWidth: true
-                placeholderText: "напр. Intel Core i5-13400 2.5 GHz"
-                text: controller.deviceProcessor
-                onEditingFinished: controller.deviceProcessor = text
-            }
-
-            Label { text: "Чипсет"; opacity: 0.8 }
-            TextField {
-                Layout.fillWidth: true
-                placeholderText: "напр. Intel B760"
-                text: controller.deviceChipset
-                onEditingFinished: controller.deviceChipset = text
-            }
-
-            Label { text: "ОЗУ"; opacity: 0.8 }
-            TextField {
-                Layout.fillWidth: true
-                placeholderText: "напр. DDR4 16384 MB"
-                text: controller.deviceRam
-                onEditingFinished: controller.deviceRam = text
-            }
-        }
-
-        // Divider
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.leftMargin: 24
-            Layout.rightMargin: 24
-            implicitHeight: 1
-            color: "#40ffffff"
-        }
-
-        // OS Install section
-        Pane {
-            Layout.fillWidth: true
-            Layout.topMargin: 8
-            padding: 16
-
-            Label {
-                text: "Установка и запуск ОС"
-                font.pixelSize: 16
-                font.bold: true
-            }
-        }
-
-        GridLayout {
-            Layout.fillWidth: true
-            Layout.margins: 24
-            columns: 2
-            rowSpacing: 8
-            columnSpacing: 16
-
-            Label { text: "Результат"; opacity: 0.8 }
-            ComboBox {
-                id: osResultCombo
-                model: controller.testResultOptions()
-                currentIndex: {
-                    const opts = controller.testResultOptions()
-                    const idx = opts.indexOf(controller.osTestResult)
-                    return idx >= 0 ? idx : 0
-                }
-                onActivated: controller.osTestResult = currentText
-
-                Connections {
-                    target: controller
-                    function onOsInstallChanged() {
-                        const opts = controller.testResultOptions()
-                        const idx = opts.indexOf(controller.osTestResult)
-                        osResultCombo.currentIndex = idx >= 0 ? idx : 0
-                    }
+                    font.pixelSize: 20
+                    font.weight: Font.Medium
+                    color: "#111827"
                 }
             }
 
-            Label { text: "Примечание"; opacity: 0.8 }
-            TextField {
-                id: osNoteField
-                Layout.fillWidth: true
-                placeholderText: "напр. Установка с USB Flash"
-                text: controller.osTestNote
-                onEditingFinished: controller.osTestNote = text
-
-                Connections {
-                    target: controller
-                    function onOsInstallChanged() { osNoteField.text = controller.osTestNote }
-                }
-            }
-
-            Label {
-                text: "Перечень проверок"
-                opacity: 0.8
-                verticalAlignment: Label.AlignTop
-                topPadding: 8
-            }
-
+            // ── Device fields ─────────────────────────────────────────────────
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 4
+                Layout.margins: 32
+                spacing: 12
 
-                // Existing check items
                 Repeater {
-                    id: osChecksRepeater
-                    model: controller.osCheckItems
+                    model: [
+                        { label: "Название устройства", placeholder: "напр. ПК KVADRA TAU",               prop: "devicePageTitle"   },
+                        { label: "Модель",              placeholder: "напр. KVADRA TAU",                   prop: "deviceModel"       },
+                        { label: "Серийный / Заводской номер", placeholder: "напр. 0310230010",            prop: "deviceSerial"      },
+                        { label: "Материнская плата",   placeholder: "напр. KVADRA B760",                  prop: "deviceMotherboard" },
+                        { label: "Тип BIOS (версия)",   placeholder: "напр. KVADRA UEFI BIOS Firmware v1.3.1", prop: "deviceBios"   },
+                        { label: "Процессор",           placeholder: "напр. Intel Core i5-13400 2.5 GHz",  prop: "deviceProcessor"   },
+                        { label: "Чипсет",              placeholder: "напр. Intel B760",                   prop: "deviceChipset"     },
+                        { label: "ОЗУ",                 placeholder: "напр. DDR4 16384 MB",                prop: "deviceRam"         }
+                    ]
+                    delegate: DeviceFieldCard {
+                        Layout.fillWidth: true
+                        fieldLabel: modelData.label
+                        fieldPlaceholder: modelData.placeholder
+                        fieldValue: controller[modelData.prop]
+                        onFieldChanged: function(v) { controller[modelData.prop] = v }
+                    }
+                }
 
-                    RowLayout {
-                        width: parent.width
-                        spacing: 4
+                // ── Divider ───────────────────────────────────────────────────
+                Item { implicitHeight: 8 }
+
+                // ── OS Install section header ─────────────────────────────────
+                Label {
+                    text: "Установка и запуск ОС"
+                    font.pixelSize: 18
+                    font.weight: Font.Medium
+                    color: "#111827"
+                }
+
+                // ── Result toggle ─────────────────────────────────────────────
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: resultContent.implicitHeight + 32
+                    color: "white"
+                    radius: 8
+                    border.color: "#E5E7EB"
+                    border.width: 1
+
+                    ColumnLayout {
+                        id: resultContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 12
 
                         Label {
-                            text: (index + 1) + "."
-                            opacity: 0.5
-                            Layout.preferredWidth: 20
+                            text: "Результат"
+                            font.pixelSize: 13
+                            color: "#6B7280"
                         }
 
-                        TextField {
+                        ResultToggle {
                             Layout.fillWidth: true
-                            text: modelData
-                            background: null
-                            onEditingFinished: controller.setOsCheckItem(index, text)
-                        }
+                            currentValue: controller.osTestResult
+                            onValueChanged: function(v) { controller.osTestResult = v }
 
-                        ToolButton {
-                            text: "✕"
-                            font.pixelSize: 11
-                            opacity: 0.5
-                            onClicked: controller.removeOsCheckItem(index)
+                            Connections {
+                                target: controller
+                                function onOsInstallChanged() {
+                                    // binding refreshes automatically
+                                }
+                            }
                         }
                     }
                 }
 
-                // Add new check item row
-                RowLayout {
-                    spacing: 8
+                // ── Note card ─────────────────────────────────────────────────
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: noteContent.implicitHeight + 32
+                    color: "white"
+                    radius: 8
+                    border.color: "#E5E7EB"
+                    border.width: 1
 
-                    TextField {
-                        id: osCheckField
-                        Layout.preferredWidth: 300
-                        placeholderText: "Добавить пункт..."
-                        onAccepted: root.addOsCheck()
-                    }
+                    ColumnLayout {
+                        id: noteContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
 
-                    Button {
-                        text: "+"
-                        flat: true
-                        onClicked: root.addOsCheck()
-                    }
+                        Label {
+                            text: "Примечание"
+                            font.pixelSize: 13
+                            color: "#6B7280"
+                        }
 
-                    ComboBox {
-                        model: controller.osInstallChecksPresets()
-                        displayText: "Из пресетов"
-                        implicitWidth: 140
-                        onActivated: controller.addOsCheckItem(currentText)
+                        TextArea {
+                            id: osNoteArea
+                            Layout.fillWidth: true
+                            implicitHeight: 72
+                            text: controller.osTestNote
+                            placeholderText: "напр. Установка с USB Flash"
+                            wrapMode: TextArea.Wrap
+                            font.pixelSize: 14
+                            color: "#111827"
+                            topPadding: 8
+                            leftPadding: 8
+                            rightPadding: 8
+                            bottomPadding: 8
+                            background: Rectangle {
+                                color: "#F9FAFB"
+                                radius: 6
+                                border.color: osNoteArea.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                border.width: osNoteArea.activeFocus ? 1.5 : 1
+                            }
+                            onEditingFinished: controller.osTestNote = text
+
+                            Connections {
+                                target: controller
+                                function onOsInstallChanged() { osNoteArea.text = controller.osTestNote }
+                            }
+                        }
                     }
                 }
+
+                // ── Check items card ──────────────────────────────────────────
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: checksContent.implicitHeight + 32
+                    color: "white"
+                    radius: 8
+                    border.color: "#E5E7EB"
+                    border.width: 1
+
+                    ColumnLayout {
+                        id: checksContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 0
+
+                        Label {
+                            text: "Перечень проверок"
+                            font.pixelSize: 13
+                            color: "#6B7280"
+                            Layout.bottomMargin: 12
+                        }
+
+                        // Existing check items
+                        Repeater {
+                            id: osChecksRepeater
+                            model: controller.osCheckItems
+
+                            delegate: Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 44
+                                color: "white"
+
+                                Rectangle {
+                                    anchors.top: parent.top
+                                    width: parent.width
+                                    height: 1
+                                    color: "#F3F4F6"
+                                    visible: index > 0
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 4
+                                    anchors.rightMargin: 8
+                                    spacing: 8
+
+                                    Label {
+                                        text: index + 1
+                                        font.pixelSize: 13
+                                        color: "#9CA3AF"
+                                        Layout.preferredWidth: 20
+                                        horizontalAlignment: Text.AlignRight
+                                    }
+
+                                    TextField {
+                                        Layout.fillWidth: true
+                                        text: modelData
+                                        font.pixelSize: 14
+                                        color: "#111827"
+                                        background: null
+                                        leftPadding: 0
+                                        onEditingFinished: controller.setOsCheckItem(index, text)
+                                    }
+
+                                    Rectangle {
+                                        width: 24
+                                        height: 24
+                                        radius: 4
+                                        color: osRemoveHover.containsMouse ? "#FEE2E2" : "transparent"
+
+                                        Label {
+                                            anchors.centerIn: parent
+                                            text: "×"
+                                            font.pixelSize: 16
+                                            color: osRemoveHover.containsMouse ? "#DC2626" : "#9CA3AF"
+                                        }
+
+                                        HoverHandler { id: osRemoveHover }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: controller.removeOsCheckItem(index)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Add check item row
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: 44
+                            color: addCheckHover.containsMouse ? "#F9FAFB" : "white"
+                            radius: 6
+                            border.color: "#D1D5DB"
+                            border.width: 1
+                            Layout.topMargin: osChecksRepeater.count > 0 ? 8 : 0
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+                                spacing: 8
+
+                                Label {
+                                    text: "+"
+                                    font.pixelSize: 16
+                                    color: "#6B7280"
+                                }
+
+                                TextField {
+                                    id: osCheckField
+                                    Layout.fillWidth: true
+                                    placeholderText: "Добавить пункт..."
+                                    font.pixelSize: 14
+                                    background: null
+                                    leftPadding: 0
+                                    onAccepted: root.addOsCheck()
+                                }
+
+                                PresetsPopup {
+                                    implicitWidth: 110; implicitHeight: 34
+                                    presets: controller.osInstallChecksPresets()
+                                    onSelected: function(v) { controller.addOsCheckItem(v) }
+                                }
+                            }
+
+                            HoverHandler { id: addCheckHover }
+                        }
+                    }
+                }
+
+                Item { implicitHeight: 24 }
             }
         }
-
-        Item { Layout.fillHeight: true; implicitHeight: 24 }
     }
 
-    // Adds a new OS check item from the text field
     function addOsCheck() {
         const text = osCheckField.text.trim()
         if (text !== "") {

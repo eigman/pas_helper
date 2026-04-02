@@ -173,7 +173,7 @@ void ReportParser::parseReportGroup(const QStringList& lines, ReportData& data)
 void ReportParser::parseTestsGroup(const QStringList& lines, ReportData& data)
 {
     // State machine to parse @dl ... @enddl block with @term/@use sub-blocks
-    enum class State { Idle, InTerm, InUse, InUl, InHint, InCaution };
+    enum class State { Idle, InTerm, InUse, InUl, InHint, InCaution, InWarning };
     State state = State::Idle;
 
     QString currentTermName;
@@ -181,6 +181,7 @@ void ReportParser::parseTestsGroup(const QStringList& lines, ReportData& data)
     QString currentResult;
     QString currentHint;
     QString currentCaution;
+    QString currentWarning;
 
     auto flushTerm = [&]() {
         if (currentTermName.isEmpty()) return;
@@ -190,6 +191,7 @@ void ReportParser::parseTestsGroup(const QStringList& lines, ReportData& data)
             if (!currentResult.isEmpty()) data.osInstall.testResult = currentResult;
             data.osInstall.hintText    = currentHint;
             data.osInstall.cautionText = currentCaution;
+            data.osInstall.warningText = currentWarning;
         } else {
             auto* sub = findOrCreateSubsystem(data, currentTermName);
             if (sub) {
@@ -197,6 +199,7 @@ void ReportParser::parseTestsGroup(const QStringList& lines, ReportData& data)
                 if (!currentResult.isEmpty()) sub->testResult = currentResult;
                 sub->hintText    = currentHint;
                 sub->cautionText = currentCaution;
+                sub->warningText = currentWarning;
             }
         }
         currentTermName.clear();
@@ -204,6 +207,7 @@ void ReportParser::parseTestsGroup(const QStringList& lines, ReportData& data)
         currentResult.clear();
         currentHint.clear();
         currentCaution.clear();
+        currentWarning.clear();
     };
 
     for (const QString& rawLine : lines) {
@@ -241,6 +245,7 @@ void ReportParser::parseTestsGroup(const QStringList& lines, ReportData& data)
 
             if (trimmed == QLatin1String("@hint")) { state = State::InHint; continue; }
             if (trimmed == QLatin1String("@caution")) { state = State::InCaution; continue; }
+            if (trimmed == QLatin1String("@warning")) { state = State::InWarning; continue; }
         }
 
         if (state == State::InHint) {
@@ -254,6 +259,13 @@ void ReportParser::parseTestsGroup(const QStringList& lines, ReportData& data)
             if (trimmed == QLatin1String("@endcaution")) { state = State::InUse; continue; }
             if (!currentCaution.isEmpty()) currentCaution += QLatin1Char('\n');
             currentCaution += trimmed;
+            continue;
+        }
+
+        if (state == State::InWarning) {
+            if (trimmed == QLatin1String("@endwarning")) { state = State::InUse; continue; }
+            if (!currentWarning.isEmpty()) currentWarning += QLatin1Char('\n');
+            currentWarning += trimmed;
             continue;
         }
     }

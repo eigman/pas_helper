@@ -72,6 +72,12 @@ void WorkItemModel::setText(int index, const QString& text)
     emit dataChanged(idx, idx, { TextRole });
 }
 
+bool WorkItemModel::isDone(int index) const
+{
+    if (index < 0 || index >= m_data.size()) return false;
+    return m_data.at(index).done;
+}
+
 void WorkItemModel::setItems(const QList<WorkItem>& items)
 {
     beginResetModel();

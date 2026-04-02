@@ -29,6 +29,8 @@ QVariant SubsystemModel::data(const QModelIndex& index, int role) const
     }
     case HintTextRole:    return e.hintText;
     case CautionTextRole: return e.cautionText;
+    case WarningTextRole: return e.warningText;
+    case IconRole:        return e.icon;
     case IsCompleteRole:  return !e.name.isEmpty() && !e.driver.isEmpty();
     default: return {};
     }
@@ -48,6 +50,7 @@ bool SubsystemModel::setData(const QModelIndex& index, const QVariant& value, in
     case TestNoteRole:    e.testNote    = value.toString(); break;
     case HintTextRole:    e.hintText    = value.toString(); break;
     case CautionTextRole: e.cautionText = value.toString(); break;
+    case WarningTextRole: e.warningText = value.toString(); break;
     default: return false;
     }
 
@@ -67,6 +70,8 @@ QHash<int, QByteArray> SubsystemModel::roleNames() const
         { CheckItemsRole,  "checkItems"  },
         { HintTextRole,    "hintText"    },
         { CautionTextRole, "cautionText" },
+        { WarningTextRole, "warningText" },
+        { IconRole,        "icon"        },
         { IsCompleteRole,  "isComplete"  },
     };
 }
@@ -123,6 +128,8 @@ void SubsystemModel::setField(int index, const QString& field, const QVariant& v
     else if (field == QLatin1String("testNote"))    { e.testNote    = value.toString(); changed = true; }
     else if (field == QLatin1String("hintText"))    { e.hintText    = value.toString(); changed = true; }
     else if (field == QLatin1String("cautionText")) { e.cautionText = value.toString(); changed = true; }
+    else if (field == QLatin1String("warningText")) { e.warningText = value.toString(); changed = true; }
+    else if (field == QLatin1String("icon"))        { e.icon        = value.toString(); changed = true; }
 
     if (changed) notifyRow(index);
 }
@@ -170,6 +177,7 @@ QVariantMap SubsystemModel::getSubsystem(int index) const
         { QStringLiteral("checkItems"),  checkItems    },
         { QStringLiteral("hintText"),    e.hintText    },
         { QStringLiteral("cautionText"), e.cautionText },
+        { QStringLiteral("warningText"), e.warningText },
     };
 }
 

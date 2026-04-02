@@ -102,7 +102,8 @@ QString ReportEngine::generateTestsGroup(const ReportData& data)
                    data.osInstall.checkItems,
                    data.osInstall.testResult,
                    data.osInstall.hintText,
-                   data.osInstall.cautionText);
+                   data.osInstall.cautionText,
+                   data.osInstall.warningText);
 
     // Subsystem terms
     for (const auto& sub : data.subsystems) {
@@ -110,7 +111,8 @@ QString ReportEngine::generateTestsGroup(const ReportData& data)
                        sub.checkItems,
                        sub.testResult,
                        sub.hintText,
-                       sub.cautionText);
+                       sub.cautionText,
+                       sub.warningText);
     }
 
     s << "@enddl\n        \n\n";
@@ -138,7 +140,8 @@ QString ReportEngine::termBlock(const QString& termName,
                                 const QList<CheckItem>& checks,
                                 const QString& result,
                                 const QString& hintText,
-                                const QString& cautionText)
+                                const QString& cautionText,
+                                const QString& warningText)
 {
     QString out;
     QTextStream s(&out);
@@ -161,6 +164,11 @@ QString ReportEngine::termBlock(const QString& termName,
         s << "    @caution\n";
         s << "    " << cautionText << "\n";
         s << "    @endcaution\n";
+    }
+    if (!warningText.isEmpty()) {
+        s << "    @warning\n";
+        s << "    " << warningText << "\n";
+        s << "    @endwarning\n";
     }
 
     s << "\n";

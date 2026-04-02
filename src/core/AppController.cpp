@@ -127,11 +127,13 @@ void AppController::newReport()
 void AppController::addSubsystem(const QString& name)
 {
     m_subsystemModel->addSubsystem(name);
-    // Apply default checks from presets
     const int idx = m_subsystemModel->rowCount() - 1;
+    // Apply default checks and icon from presets
     const QStringList checks = m_presets.checksForSubsystem(name);
     if (!checks.isEmpty())
         m_subsystemModel->setCheckItems(idx, checks);
+    const QString icon = m_presets.iconForSubsystem(name);
+    m_subsystemModel->setField(idx, QStringLiteral("icon"), icon);
     setModified(true);
 }
 
@@ -187,6 +189,7 @@ void AppController::setOsCheckItem(int index, const QString& text)
 // ── Presets ──────────────────────────────────────────────────────────────────
 
 QStringList AppController::subsystemNamePresets() const { return m_presets.subsystemNames(); }
+QString     AppController::iconForSubsystem(const QString& name) const { return m_presets.iconForSubsystem(name); }
 QStringList AppController::driverPresets()        const { return m_presets.drivers(); }
 QStringList AppController::interfacePresets()     const { return m_presets.interfaces(); }
 QStringList AppController::osInstallChecksPresets() const { return m_presets.osInstallChecks(); }
@@ -259,6 +262,7 @@ SET_OS(TestResult,  testResult)
 SET_OS(TestNote,    testNote)
 SET_OS(HintText,    hintText)
 SET_OS(CautionText, cautionText)
+SET_OS(WarningText, warningText)
 
 #undef SET_OS
 
@@ -290,7 +294,11 @@ void AppController::setModified(bool v)
 void AppController::loadReportDataIntoModels(const ReportData& data)
 {
     m_data = data;
-    m_subsystemModel->setSubsystems(data.subsystems);
+    // Populate icon from presets before loading into model
+    QList<SubsystemEntry> subsystems = data.subsystems;
+    for (auto& sub : subsystems)
+        sub.icon = m_presets.iconForSubsystem(sub.name);
+    m_subsystemModel->setSubsystems(subsystems);
     emit deviceChanged();
     emit osInstallChanged();
     emit recommendationsChanged();

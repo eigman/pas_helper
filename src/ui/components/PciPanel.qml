@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 // PCI Analyzer panel — paste pci -vvv dump, parse it, assign devices to subsystems
@@ -9,94 +8,168 @@ Item {
 
     signal assignToSubsystem(int pciIndex, int subsystemIndex)
 
+    Rectangle {
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: 1
+        color: "#E5E7EB"
+    }
+
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 12
-        spacing: 10
+        anchors.margins: 20
+        spacing: 16
 
-        Label {
-            text: "PCI Анализатор"
-            font.pixelSize: 16
-            font.bold: true
+        // ── Header ────────────────────────────────────────────────────────────
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+
+            Image {
+                source: "qrc:/resources/icons/pci.svg"
+                width: 18; height: 18; opacity: 0.6
+            }
+
+            Label {
+                text: "PCI Анализатор"
+                font.pixelSize: 16
+                font.weight: Font.Medium
+                color: "#111827"
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: controller.pciStatusMessage
+                font.pixelSize: 11
+                color: controller.pciIdsLoaded ? "#16A34A" : "#D97706"
+                wrapMode: Text.Wrap
+            }
         }
 
-        // Status
-        Label {
-            text: controller.pciStatusMessage
-            font.pixelSize: 11
-            color: controller.pciIdsLoaded
-                   ? Material.color(Material.Green)
-                   : Material.color(Material.Orange)
-            wrapMode: Text.Wrap
+        // ── Dump input card ───────────────────────────────────────────────────
+        Rectangle {
             Layout.fillWidth: true
-        }
-
-        // Dump input
-        GroupBox {
-            title: "Вставьте вывод pci -vvv"
-            Layout.fillWidth: true
-            Layout.preferredHeight: 180
+            implicitHeight: dumpCardContent.implicitHeight + 32
+            color: "white"; radius: 8
+            border.color: "#E5E7EB"; border.width: 1
 
             ColumnLayout {
-                anchors.fill: parent
-                spacing: 6
+                id: dumpCardContent
+                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
+                spacing: 10
 
-                ScrollView {
+                Label {
+                    text: "Вставьте вывод pci -vvv"
+                    font.pixelSize: 13; color: "#6B7280"
+                }
+
+                TextArea {
+                    id: dumpArea
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    TextArea {
-                        id: dumpArea
-                        placeholderText: "Вставьте сюда вывод команды pci -vvv с целевой машины...\n\nClass          = Mass Storage (Serial ATA)\nVendor ID      = 8086h, Intel Corporation\nDevice ID      = 7a62h, Unknown Unknown\n..."
-                        wrapMode: TextArea.Wrap
-                        font.family: "monospace"
-                        font.pixelSize: 11
+                    implicitHeight: 140
+                    placeholderText: "Class          = Mass Storage (Serial ATA)\nVendor ID      = 8086h, Intel Corporation\nDevice ID      = 7a62h, Unknown Unknown\n..."
+                    wrapMode: TextArea.Wrap
+                    font.family: "monospace"
+                    font.pixelSize: 11
+                    color: "#374151"
+                    topPadding: 8; leftPadding: 10; rightPadding: 10; bottomPadding: 8
+                    background: Rectangle {
+                        color: "#F9FAFB"; radius: 6
+                        border.color: dumpArea.activeFocus ? "#3B82F6" : "#E5E7EB"
+                        border.width: dumpArea.activeFocus ? 1.5 : 1
                     }
                 }
 
                 RowLayout {
-                    Button {
-                        text: "Разобрать"
-                        Material.accent: Material.Teal
-                        highlighted: true
-                        enabled: dumpArea.text.trim() !== ""
-                        onClicked: {
-                            controller.parsePciDump(dumpArea.text)
+                    Layout.fillWidth: true; spacing: 8
+
+                    Rectangle {
+                        implicitWidth: parseLabel.implicitWidth + 24
+                        implicitHeight: 34
+                        radius: 6
+                        color: dumpArea.text.trim() !== "" ? "#3B82F6" : "#E5E7EB"
+
+                        Label {
+                            id: parseLabel
+                            anchors.centerIn: parent
+                            text: "Разобрать"
+                            font.pixelSize: 13; font.weight: Font.Medium
+                            color: dumpArea.text.trim() !== "" ? "white" : "#9CA3AF"
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: dumpArea.text.trim() !== "" ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            enabled: dumpArea.text.trim() !== ""
+                            onClicked: controller.parsePciDump(dumpArea.text)
                         }
                     }
-                    Button {
-                        text: "Очистить"
-                        flat: true
-                        onClicked: dumpArea.text = ""
+
+                    Rectangle {
+                        implicitWidth: clearLabel.implicitWidth + 20
+                        implicitHeight: 34
+                        radius: 6
+                        color: clearHover.containsMouse ? "#F3F4F6" : "transparent"
+                        border.color: "#E5E7EB"; border.width: 1
+
+                        Label {
+                            id: clearLabel
+                            anchors.centerIn: parent
+                            text: "Очистить"
+                            font.pixelSize: 13
+                            color: "#6B7280"
+                        }
+
+                        HoverHandler { id: clearHover }
+                        MouseArea {
+                            anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                            onClicked: dumpArea.text = ""
+                        }
                     }
+
+                    Item { Layout.fillWidth: true }
+
                     Label {
                         text: controller.pciModel.count + " устр."
                         visible: controller.pciModel.count > 0
-                        opacity: 0.7
-                        font.pixelSize: 12
+                        font.pixelSize: 12; color: "#6B7280"
                     }
                 }
             }
         }
 
-        // Parsed devices list
-        GroupBox {
-            title: "Найденные устройства"
+        // ── Devices list ──────────────────────────────────────────────────────
+        Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            color: "white"; radius: 8
+            border.color: "#E5E7EB"; border.width: 1
             visible: controller.pciModel.count > 0
 
             ColumnLayout {
                 anchors.fill: parent
-                spacing: 4
+                anchors.margins: 16
+                spacing: 10
 
-                // Subsystem selector for assignment
+                Label {
+                    text: "Найденные устройства"
+                    font.pixelSize: 13; color: "#6B7280"
+                }
+
+                // Subsystem assignment selector
                 RowLayout {
-                    Layout.fillWidth: true
-                    Label { text: "Назначить в:"; opacity: 0.8 }
+                    Layout.fillWidth: true; spacing: 8
+
+                    Label {
+                        text: "Назначить в:"
+                        font.pixelSize: 13; color: "#374151"
+                    }
+
                     ComboBox {
                         id: targetSubsystemCombo
                         Layout.fillWidth: true
+                        font.pixelSize: 13
                         model: {
                             let names = ["— выбрать подсистему —"]
                             for (let i = 0; i < controller.subsystemModel.count; i++) {
@@ -109,7 +182,7 @@ Item {
                     }
                 }
 
-                // Devices list
+                // Devices
                 ScrollView {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -118,49 +191,48 @@ Item {
                     ListView {
                         id: deviceList
                         model: controller.pciModel
-                        spacing: 4
+                        spacing: 8
 
-                        delegate: Pane {
+                        delegate: Rectangle {
                             width: deviceList.width
-                            padding: 8
-                            Material.elevation: 1
+                            implicitHeight: devContent.implicitHeight + 24
+                            color: "#F9FAFB"; radius: 6
+                            border.color: "#E5E7EB"; border.width: 1
 
                             ColumnLayout {
-                                width: parent.width - 16
-                                spacing: 2
+                                id: devContent
+                                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
+                                spacing: 6
 
                                 RowLayout {
-                                    Layout.fillWidth: true
+                                    Layout.fillWidth: true; spacing: 8
 
                                     // Class badge
                                     Rectangle {
-                                        implicitWidth: classLabel.implicitWidth + 8
-                                        implicitHeight: 18
-                                        radius: 3
-                                        color: Material.color(Material.Teal, Material.Shade800)
+                                        implicitWidth: classBadge.implicitWidth + 10
+                                        implicitHeight: 20; radius: 4
+                                        color: "#EFF6FF"
+
                                         Label {
-                                            id: classLabel
+                                            id: classBadge
                                             anchors.centerIn: parent
                                             text: model.classStr
-                                            font.pixelSize: 10
+                                            font.pixelSize: 10; color: "#1D4ED8"
                                         }
                                     }
 
                                     Label {
                                         text: model.vendorId + ":" + model.deviceId
-                                        font.family: "monospace"
-                                        font.pixelSize: 11
-                                        opacity: 0.6
+                                        font.family: "monospace"; font.pixelSize: 11
+                                        color: "#6B7280"
                                     }
 
                                     Item { Layout.fillWidth: true }
 
-                                    // Suggested subsystem chip
                                     Label {
                                         visible: model.suggestedSubsystem !== ""
                                         text: "→ " + model.suggestedSubsystem.replace(/\\n/g, ' ')
-                                        font.pixelSize: 10
-                                        color: Material.color(Material.Teal)
+                                        font.pixelSize: 10; color: "#3B82F6"
                                     }
                                 }
 
@@ -168,20 +240,37 @@ Item {
                                     text: model.deviceName !== ""
                                           ? model.deviceName
                                           : "(название не найдено — " + model.vendorName + ")"
-                                    font.pixelSize: 12
+                                    font.pixelSize: 13; color: "#111827"
                                     wrapMode: Text.Wrap
                                     Layout.fillWidth: true
                                 }
 
-                                Button {
-                                    text: "Вставить в подсистему"
-                                    flat: true
-                                    font.pixelSize: 11
-                                    Material.accent: Material.Teal
-                                    enabled: targetSubsystemCombo.currentIndex > 0
-                                    onClicked: {
-                                        const subIdx = targetSubsystemCombo.currentIndex - 1
-                                        root.assignToSubsystem(index, subIdx)
+                                Rectangle {
+                                    implicitWidth: insertLabel.implicitWidth + 20
+                                    implicitHeight: 28; radius: 6
+                                    color: targetSubsystemCombo.currentIndex > 0
+                                           ? (insertHover.containsMouse ? "#DBEAFE" : "#EFF6FF")
+                                           : "#F3F4F6"
+                                    border.color: targetSubsystemCombo.currentIndex > 0 ? "#BFDBFE" : "#E5E7EB"
+                                    border.width: 1
+
+                                    Label {
+                                        id: insertLabel
+                                        anchors.centerIn: parent
+                                        text: "Вставить в подсистему"
+                                        font.pixelSize: 11
+                                        color: targetSubsystemCombo.currentIndex > 0 ? "#1D4ED8" : "#9CA3AF"
+                                    }
+
+                                    HoverHandler { id: insertHover }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: targetSubsystemCombo.currentIndex > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                        enabled: targetSubsystemCombo.currentIndex > 0
+                                        onClicked: {
+                                            const subIdx = targetSubsystemCombo.currentIndex - 1
+                                            root.assignToSubsystem(index, subIdx)
+                                        }
                                     }
                                 }
                             }
@@ -191,16 +280,19 @@ Item {
             }
         }
 
-        // Empty state when nothing parsed
-        Label {
-            visible: controller.pciModel.count === 0
+        // Empty state
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            text: "Вставьте вывод pci -vvv\nи нажмите «Разобрать»"
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            opacity: 0.3
-            wrapMode: Text.Wrap
+            visible: controller.pciModel.count === 0
+
+            Label {
+                anchors.centerIn: parent
+                text: "Вставьте вывод pci -vvv\nи нажмите «Разобрать»"
+                horizontalAlignment: Text.AlignHCenter
+                font.pixelSize: 14; color: "#9CA3AF"
+                wrapMode: Text.Wrap
+            }
         }
     }
 }

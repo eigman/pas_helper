@@ -30,10 +30,14 @@ set_source_files_properties(src/ui/main.qml              PROPERTIES QT_RESOURCE_
 set_source_files_properties(src/ui/WorkTab.qml            PROPERTIES QT_RESOURCE_ALIAS WorkTab.qml)
 set_source_files_properties(src/ui/ReportTab.qml          PROPERTIES QT_RESOURCE_ALIAS ReportTab.qml)
 set_source_files_properties(src/ui/components/DeviceForm.qml            PROPERTIES QT_RESOURCE_ALIAS DeviceForm.qml)
-set_source_files_properties(src/ui/components/SubsystemsPage.qml        PROPERTIES QT_RESOURCE_ALIAS SubsystemsPage.qml)
 set_source_files_properties(src/ui/components/SubsystemDetail.qml       PROPERTIES QT_RESOURCE_ALIAS SubsystemDetail.qml)
 set_source_files_properties(src/ui/components/PciPanel.qml              PROPERTIES QT_RESOURCE_ALIAS PciPanel.qml)
 set_source_files_properties(src/ui/components/RecommendationsEditor.qml PROPERTIES QT_RESOURCE_ALIAS RecommendationsEditor.qml)
+set_source_files_properties(src/ui/components/SidebarNavItem.qml        PROPERTIES QT_RESOURCE_ALIAS SidebarNavItem.qml)
+set_source_files_properties(src/ui/components/SidebarSubsystemItem.qml  PROPERTIES QT_RESOURCE_ALIAS SidebarSubsystemItem.qml)
+set_source_files_properties(src/ui/components/DeviceFieldCard.qml        PROPERTIES QT_RESOURCE_ALIAS DeviceFieldCard.qml)
+set_source_files_properties(src/ui/components/ResultToggle.qml           PROPERTIES QT_RESOURCE_ALIAS ResultToggle.qml)
+set_source_files_properties(src/ui/components/PresetsPopup.qml           PROPERTIES QT_RESOURCE_ALIAS PresetsPopup.qml)
 
 qt_add_qml_module(ReportAssistant
     URI ReportAssistant
@@ -43,17 +47,31 @@ qt_add_qml_module(ReportAssistant
         src/ui/WorkTab.qml
         src/ui/ReportTab.qml
         src/ui/components/DeviceForm.qml
-        src/ui/components/SubsystemsPage.qml
         src/ui/components/SubsystemDetail.qml
         src/ui/components/PciPanel.qml
         src/ui/components/RecommendationsEditor.qml
+        src/ui/components/SidebarNavItem.qml
+        src/ui/components/SidebarSubsystemItem.qml
+        src/ui/components/DeviceFieldCard.qml
+        src/ui/components/ResultToggle.qml
+        src/ui/components/PresetsPopup.qml
 )
 
-# Resources (presets JSON) embedded via Qt resource system
+# Resources (presets JSON + icons) embedded via Qt resource system
 qt_add_resources(ReportAssistant "appresources"
     PREFIX "/"
     FILES
         resources/presets/subsystems.json
+        resources/icons/disk.svg
+        resources/icons/monitor.svg
+        resources/icons/network.svg
+        resources/icons/usb.svg
+        resources/icons/keyboard.svg
+        resources/icons/audio.svg
+        resources/icons/serial.svg
+        resources/icons/wifi.svg
+        resources/icons/settings.svg
+        resources/icons/pci.svg
 )
 
 target_link_libraries(ReportAssistant PRIVATE

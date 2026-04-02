@@ -20,6 +20,8 @@ public:
         CheckItemsRole,   // QStringList
         HintTextRole,
         CautionTextRole,
+        WarningTextRole,
+        IconRole,
         IsCompleteRole,   // bool: name + controller + driver all filled
     };
     Q_ENUM(Roles)
@@ -45,7 +47,7 @@ public:
 
     // Returns all fields of a subsystem as a QVariantMap for QML access.
     // Keys: "name", "controller", "interfaces", "driver", "testResult",
-    //       "testNote", "checkItems" (QStringList), "hintText", "cautionText"
+    //       "testNote", "checkItems" (QStringList), "hintText", "cautionText", "warningText"
     Q_INVOKABLE QVariantMap getSubsystem(int index) const;
 
     // Check items CRUD

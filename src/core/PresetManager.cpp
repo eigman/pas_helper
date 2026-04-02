@@ -21,6 +21,7 @@ bool PresetManager::load(const QString& presetsFilePath)
         const QJsonObject obj = v.toObject();
         SubsystemPreset preset;
         preset.name = obj.value(QLatin1String("name")).toString();
+        preset.icon = obj.value(QLatin1String("icon")).toString();
         const QJsonArray checks = obj.value(QLatin1String("defaultChecks")).toArray();
         for (const QJsonValue& c : checks)
             preset.defaultChecks << c.toString();
@@ -46,6 +47,21 @@ QStringList PresetManager::subsystemNames() const
     QStringList names;
     for (const auto& p : m_subsystems) names << p.name;
     return names;
+}
+
+QString PresetManager::iconForSubsystem(const QString& subsystemName) const
+{
+    const QString target = subsystemName.toLower().trimmed();
+    for (const auto& p : m_subsystems) {
+        if (p.name.toLower().trimmed() == target)
+            return p.icon;
+        QString plain = p.name;
+        plain.replace(QStringLiteral(" \\n "), QStringLiteral(" "));
+        plain.replace(QStringLiteral("\\n"), QStringLiteral(" "));
+        if (plain.toLower().trimmed() == target)
+            return p.icon;
+    }
+    return QStringLiteral("settings");
 }
 
 QStringList PresetManager::drivers() const { return m_drivers; }

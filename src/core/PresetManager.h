@@ -6,6 +6,7 @@
 
 struct SubsystemPreset {
     QString name;
+    QString icon; // icon key, e.g. "disk", "monitor", "network"
     QStringList defaultChecks;
 };
 
@@ -16,6 +17,7 @@ public:
     bool load(const QString& presetsFilePath);
 
     QStringList subsystemNames() const;
+    QString iconForSubsystem(const QString& subsystemName) const;
     QStringList drivers() const;
     QStringList interfaces() const;
     QStringList osInstallChecks() const;

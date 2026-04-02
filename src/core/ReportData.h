@@ -14,6 +14,9 @@ struct SubsystemEntry {
     // e.g., "Дисковая \n подсистема"
     QString name;
 
+    // Icon key for sidebar (e.g. "disk", "monitor") — not saved to .txt
+    QString icon;
+
     // Controller string, e.g., "Raptor Lake SATA AHCI Controller \n[**8086:7a62**]"
     // Use "-" when no controller
     QString controller;
@@ -32,6 +35,7 @@ struct SubsystemEntry {
     QList<CheckItem> checkItems;
     QString hintText;    // content of @hint block (empty = no hint)
     QString cautionText; // content of @caution block (empty = no caution)
+    QString warningText; // content of @warning block (empty = no warning)
 
     // Returns name with \n stripped and collapsed to a space
     // Used in @group report table and @term blocks
@@ -50,6 +54,7 @@ struct OsInstallEntry {
     QList<CheckItem> checkItems;
     QString hintText;
     QString cautionText;
+    QString warningText;
 };
 
 // Device hardware parameters (first table in @group device)

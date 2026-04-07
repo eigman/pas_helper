@@ -38,6 +38,9 @@ set_source_files_properties(src/ui/components/SidebarSubsystemItem.qml  PROPERTI
 set_source_files_properties(src/ui/components/DeviceFieldCard.qml        PROPERTIES QT_RESOURCE_ALIAS DeviceFieldCard.qml)
 set_source_files_properties(src/ui/components/ResultToggle.qml           PROPERTIES QT_RESOURCE_ALIAS ResultToggle.qml)
 set_source_files_properties(src/ui/components/PresetsPopup.qml           PROPERTIES QT_RESOURCE_ALIAS PresetsPopup.qml)
+set_source_files_properties(src/ui/components/PresetPickerPopup.qml      PROPERTIES QT_RESOURCE_ALIAS PresetPickerPopup.qml)
+set_source_files_properties(src/ui/components/InterfacePickerPopup.qml   PROPERTIES QT_RESOURCE_ALIAS InterfacePickerPopup.qml)
+set_source_files_properties(src/ui/components/RamPickerPopup.qml         PROPERTIES QT_RESOURCE_ALIAS RamPickerPopup.qml)
 
 qt_add_qml_module(ReportAssistant
     URI ReportAssistant
@@ -55,6 +58,9 @@ qt_add_qml_module(ReportAssistant
         src/ui/components/DeviceFieldCard.qml
         src/ui/components/ResultToggle.qml
         src/ui/components/PresetsPopup.qml
+        src/ui/components/PresetPickerPopup.qml
+        src/ui/components/InterfacePickerPopup.qml
+        src/ui/components/RamPickerPopup.qml
 )
 
 # Resources (presets JSON + icons) embedded via Qt resource system
@@ -72,6 +78,7 @@ qt_add_resources(ReportAssistant "appresources"
         resources/icons/wifi.svg
         resources/icons/settings.svg
         resources/icons/pci.svg
+        resources/icons/recommendations.svg
 )
 
 target_link_libraries(ReportAssistant PRIVATE

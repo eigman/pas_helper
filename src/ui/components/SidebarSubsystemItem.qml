@@ -1,8 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 
-// Sidebar item for a subsystem — shows icon, name, and delete on hover
 Rectangle {
     id: root
 
@@ -14,7 +12,7 @@ Rectangle {
     signal removeClicked()
 
     implicitHeight: 36
-    color: selected ? "#EFF6FF" : (rowHover.containsMouse ? "#F1F5F9" : "transparent")
+    color: selected ? "#EFF6FF" : (rowHover.hovered ? "#F1F5F9" : "transparent")
     radius: 6
 
     // Left selection indicator
@@ -26,56 +24,69 @@ Rectangle {
         visible: root.selected
     }
 
-    RowLayout {
-        anchors.fill: parent
-        anchors.leftMargin: 16
+    // Icon
+    Image {
+        id: icon
+        x: 16; anchors.verticalCenter: parent.verticalCenter
+        source: "qrc:/resources/icons/" + root.iconKey + ".svg"
+        width: 16; height: 16
+        opacity: root.selected ? 1.0 : 0.5
+    }
+
+    // Label
+    Text {
+        anchors.left: icon.right; anchors.leftMargin: 10
+        anchors.right: deleteArea.visible ? deleteArea.left : parent.right
         anchors.rightMargin: 8
-        spacing: 10
+        anchors.verticalCenter: parent.verticalCenter
+        text: root.subsystemName
+        font.pixelSize: 13
+        font.weight: root.selected ? Font.Medium : Font.Normal
+        color: root.selected ? "#1D4ED8" : "#374151"
+        elide: Text.ElideRight
+    }
 
-        Image {
-            source: "qrc:/resources/icons/" + root.iconKey + ".svg"
-            width: 16; height: 16
-            opacity: root.selected ? 1.0 : 0.5
-            Layout.alignment: Qt.AlignVCenter
+    // Delete button — always present, only visible on hover
+    Rectangle {
+        id: deleteArea
+        anchors.right: parent.right; anchors.rightMargin: 8
+        anchors.verticalCenter: parent.verticalCenter
+        width: 20; height: 20; radius: 4
+        visible: rowHover.hovered
+        color: deleteHover.hovered ? "#FEE2E2" : "transparent"
+        z: 2
+
+        Text {
+            anchors.centerIn: parent
+            text: "×"; font.pixelSize: 15
+            color: deleteHover.hovered ? "#DC2626" : "#9CA3AF"
         }
 
-        Label {
-            text: root.subsystemName
-            font.pixelSize: 13
-            font.weight: root.selected ? Font.Medium : Font.Normal
-            color: root.selected ? "#1D4ED8" : "#374151"
-            Layout.fillWidth: true
-            elide: Text.ElideRight
-        }
+        HoverHandler { id: deleteHover }
 
-        // Delete button — visible on hover, handles its own click
-        Rectangle {
-            id: deleteBtn
-            width: 20; height: 20; radius: 4
-            visible: rowHover.containsMouse
-            color: deleteArea.containsMouse ? "#FEE2E2" : "transparent"
-
-            Label {
-                anchors.centerIn: parent
-                text: "×"; font.pixelSize: 14
-                color: deleteArea.containsMouse ? "#DC2626" : "#9CA3AF"
-            }
-
-            HoverHandler { id: deleteArea }
-
-            TapHandler {
-                onTapped: root.removeClicked()
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            z: 2
+            onClicked: function(mouse) {
+                mouse.accepted = true
+                root.removeClicked()
             }
         }
     }
 
+    // Row hover tracker
     HoverHandler { id: rowHover }
 
-    TapHandler {
-        onTapped: {
-            // Only fire if not tapping on the delete button
-            if (!deleteBtn.visible || !deleteArea.containsMouse)
+    // Row click — fires only when not over delete button
+    MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.PointingHandCursor
+        z: 1
+        onClicked: function(mouse) {
+            if (!deleteHover.hovered) {
                 root.clicked()
+            }
         }
     }
 }

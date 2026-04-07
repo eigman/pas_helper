@@ -12,10 +12,11 @@ Item {
 
     function reload() {
         if (subsystemIndex < 0) return
+        root.checkItemsList = controller.subsystemModel.getSubsystem(subsystemIndex)["checkItems"] || []
         const s = controller.subsystemModel.getSubsystem(subsystemIndex)
-        nameField.text       = s["name"]        || ""
+        nameField.text       = (s["name"]       || "").replace(/ ?\\n ?/g, ' ').trim()
         controllerArea.text  = s["controller"]  || ""
-        ifaceField.text      = s["interfaces"]  || ""
+        ifaceField.text      = (s["interfaces"] || "").replace(/ ?\\n ?/g, ' ')
         driverField.text     = s["driver"]      || ""
         noteArea.text        = s["testNote"]    || ""
         hintArea.text        = s["hintText"]    || ""
@@ -36,13 +37,22 @@ Item {
 
     Connections {
         target: controller.subsystemModel
-        function onDataChanged() { root.reload() }
+        function onDataChanged() {
+            root.reload()
+            if (root.subsystemIndex >= 0)
+                root.checkItemsList = controller.subsystemModel.getSubsystem(root.subsystemIndex)["checkItems"] || []
+        }
     }
 
     property string currentResult: "успешно"
     property bool hintEnabled: false
     property bool cautionEnabled: false
     property bool warningEnabled: false
+
+    property var checkItemsList: {
+        if (root.subsystemIndex < 0) return []
+        return controller.subsystemModel.getSubsystem(root.subsystemIndex)["checkItems"] || []
+    }
 
     ScrollView {
         anchors.fill: parent
@@ -70,7 +80,7 @@ Item {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.leftMargin: 32
-                    text: nameField.text || "Подсистема"
+                    text: (nameField.text || "Подсистема").replace(/ ?\\n ?/g, ' ').trim()
                     font.pixelSize: 20
                     font.weight: Font.Medium
                     color: "#111827"
@@ -117,7 +127,7 @@ Item {
                             TextField {
                                 id: nameField
                                 Layout.fillWidth: true
-                                placeholderText: "напр. Дисковая \\n подсистема"
+                                placeholderText: "напр. Дисковая подсистема"
                                 font.pixelSize: 14; color: "#111827"
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
                                 background: Rectangle {
@@ -126,11 +136,6 @@ Item {
                                     border.width: nameField.activeFocus ? 1.5 : 1
                                 }
                                 onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "name", text)
-                            }
-
-                            Label {
-                                text: "(\\n = перенос в таблице)"
-                                font.pixelSize: 11; color: "#9CA3AF"
                             }
                         }
                     }
@@ -233,14 +238,19 @@ Item {
                                 onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "interfaces", text)
                             }
 
-                            PresetsPopup {
+                            InterfacePickerPopup {
                                 implicitWidth: 110; implicitHeight: 34
                                 presets: controller.interfacePresets()
-                                onSelected: function(v) {
+                                onApply: function(v) {
+                                    // v contains " \n " separators for the report engine
+                                    // show in field without \n for readability
+                                    var display = v.replace(/ ?\\n ?/g, ', ')
                                     ifaceField.text = ifaceField.text !== ""
-                                        ? ifaceField.text + " \\n " + v
-                                        : v
-                                    ifaceField.editingFinished()
+                                        ? ifaceField.text + ", " + display
+                                        : display
+                                    // save with \n separators for report engine
+                                    var raw = ifaceField.text.replace(/,\s*/g, ' \\n ')
+                                    controller.subsystemModel.setField(root.subsystemIndex, "interfaces", raw)
                                 }
                             }
                         }
@@ -278,7 +288,7 @@ Item {
                                 onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "driver", text)
                             }
 
-                            PresetsPopup {
+                            PresetPickerPopup {
                                 implicitWidth: 110; implicitHeight: 34
                                 presets: controller.driverPresets()
                                 onSelected: function(v) {
@@ -310,10 +320,7 @@ Item {
 
                         Repeater {
                             id: checksRepeater
-                            model: {
-                                if (root.subsystemIndex < 0) return []
-                                return controller.subsystemModel.getSubsystem(root.subsystemIndex)["checkItems"] || []
-                            }
+                            model: root.checkItemsList
 
                             delegate: Rectangle {
                                 Layout.fillWidth: true
@@ -389,7 +396,7 @@ Item {
                                     onAccepted: root.addCheck()
                                 }
 
-                                PresetsPopup {
+                                PresetPickerPopup {
                                     implicitWidth: 110; implicitHeight: 34
                                     presets: {
                                         if (root.subsystemIndex < 0) return []

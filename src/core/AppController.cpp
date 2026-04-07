@@ -27,6 +27,11 @@ void AppController::initialize(const QString& binaryDir)
         emit errorOccurred(QStringLiteral("Не удалось загрузить пресеты из ") + presetsPath);
     }
 
+    // Add all preset subsystems by default
+    for (const QString& name : m_presets.subsystemNames())
+        addSubsystem(name);
+    setModified(false); // fresh state, not dirty
+
     // Load pci.ids
     m_pciAnalyzer.loadPciIds(binaryDir);
     emit pciStatusChanged();
@@ -185,6 +190,7 @@ void AppController::setOsCheckItem(int index, const QString& text)
     setModified(true);
     emit osInstallChanged();
 }
+
 
 // ── Presets ──────────────────────────────────────────────────────────────────
 

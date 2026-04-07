@@ -54,8 +54,7 @@ Item {
                         { label: "Материнская плата",   placeholder: "напр. KVADRA B760",                  prop: "deviceMotherboard" },
                         { label: "Тип BIOS (версия)",   placeholder: "напр. KVADRA UEFI BIOS Firmware v1.3.1", prop: "deviceBios"   },
                         { label: "Процессор",           placeholder: "напр. Intel Core i5-13400 2.5 GHz",  prop: "deviceProcessor"   },
-                        { label: "Чипсет",              placeholder: "напр. Intel B760",                   prop: "deviceChipset"     },
-                        { label: "ОЗУ",                 placeholder: "напр. DDR4 16384 MB",                prop: "deviceRam"         }
+                        { label: "Чипсет",              placeholder: "напр. Intel B760",                   prop: "deviceChipset"     }
                     ]
                     delegate: DeviceFieldCard {
                         Layout.fillWidth: true
@@ -63,6 +62,61 @@ Item {
                         fieldPlaceholder: modelData.placeholder
                         fieldValue: controller[modelData.prop]
                         onFieldChanged: function(v) { controller[modelData.prop] = v }
+                    }
+                }
+
+                // ── RAM card ──────────────────────────────────────────────────
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: ramCardContent.implicitHeight + 32
+                    color: "white"; radius: 8
+                    border.color: "#E5E7EB"; border.width: 1
+
+                    ColumnLayout {
+                        id: ramCardContent
+                        anchors.left: parent.left; anchors.right: parent.right
+                        anchors.top: parent.top; anchors.margins: 16
+                        spacing: 8
+
+                        Label { text: "ОЗУ"; font.pixelSize: 13; color: "#6B7280" }
+
+                        RowLayout {
+                            Layout.fillWidth: true; spacing: 8
+
+                            TextField {
+                                id: ramField
+                                Layout.fillWidth: true
+                                text: controller.deviceRam
+                                placeholderText: "напр. DDR4 16384 MB"
+                                font.pixelSize: 14; color: "#111827"
+                                leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
+                                background: Rectangle {
+                                    color: "#F9FAFB"; radius: 6
+                                    border.color: ramField.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                    border.width: ramField.activeFocus ? 1.5 : 1
+                                }
+                                onEditingFinished: controller.deviceRam = text
+                                Binding {
+                                    target: ramField; property: "text"; value: controller.deviceRam
+                                    when: !ramField.activeFocus
+                                }
+                            }
+
+                            RamPickerPopup {
+                                id: ramPicker
+                                implicitWidth: 70; implicitHeight: 34
+                                onSelected: function(v) {
+                                    // Append or replace — if field is empty set directly,
+                                    // otherwise append a second module
+                                    if (ramField.text.trim() === "") {
+                                        ramField.text = v
+                                    } else {
+                                        ramField.text = ramField.text + " / " + v
+                                    }
+                                    controller.deviceRam = ramField.text
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -203,22 +257,18 @@ Item {
 
                                 Rectangle {
                                     anchors.top: parent.top
-                                    width: parent.width
-                                    height: 1
-                                    color: "#F3F4F6"
+                                    width: parent.width; height: 1; color: "#F3F4F6"
                                     visible: index > 0
                                 }
 
                                 RowLayout {
                                     anchors.fill: parent
-                                    anchors.leftMargin: 4
-                                    anchors.rightMargin: 8
+                                    anchors.leftMargin: 4; anchors.rightMargin: 8
                                     spacing: 8
 
                                     Label {
                                         text: index + 1
-                                        font.pixelSize: 13
-                                        color: "#9CA3AF"
+                                        font.pixelSize: 13; color: "#9CA3AF"
                                         Layout.preferredWidth: 20
                                         horizontalAlignment: Text.AlignRight
                                     }
@@ -226,31 +276,21 @@ Item {
                                     TextField {
                                         Layout.fillWidth: true
                                         text: modelData
-                                        font.pixelSize: 14
-                                        color: "#111827"
-                                        background: null
-                                        leftPadding: 0
+                                        font.pixelSize: 14; color: "#111827"
+                                        background: null; leftPadding: 0
                                         onEditingFinished: controller.setOsCheckItem(index, text)
                                     }
 
                                     Rectangle {
-                                        width: 24
-                                        height: 24
-                                        radius: 4
+                                        width: 24; height: 24; radius: 4
                                         color: osRemoveHover.containsMouse ? "#FEE2E2" : "transparent"
-
                                         Label {
-                                            anchors.centerIn: parent
-                                            text: "×"
-                                            font.pixelSize: 16
+                                            anchors.centerIn: parent; text: "×"; font.pixelSize: 16
                                             color: osRemoveHover.containsMouse ? "#DC2626" : "#9CA3AF"
                                         }
-
                                         HoverHandler { id: osRemoveHover }
-
                                         MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
+                                            anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                             onClicked: controller.removeOsCheckItem(index)
                                         }
                                     }
@@ -290,7 +330,7 @@ Item {
                                     onAccepted: root.addOsCheck()
                                 }
 
-                                PresetsPopup {
+                                PresetPickerPopup {
                                     implicitWidth: 110; implicitHeight: 34
                                     presets: controller.osInstallChecksPresets()
                                     onSelected: function(v) { controller.addOsCheckItem(v) }

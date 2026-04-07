@@ -81,22 +81,34 @@ ApplicationWindow {
                 // File menu button
                 Rectangle {
                     id: fileMenuBtn
-                    implicitWidth: fileMenuLabel.implicitWidth + 20
+                    implicitWidth: fileMenuLabel.implicitWidth + 24
                     implicitHeight: 28; radius: 5
-                    color: fileMenuHover.containsMouse ? "#334155" : "transparent"
+                    color: fileMenuHover.containsMouse || fileMenuPopup.visible ? "#334155" : "transparent"
                     Layout.leftMargin: 8
 
-                    Label {
-                        id: fileMenuLabel
-                        anchors.centerIn: parent
-                        text: "Файл"; color: "#CBD5E1"; font.pixelSize: 12
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10; anchors.rightMargin: 8
+                        spacing: 5
+                        Label {
+                            id: fileMenuLabel
+                            text: "Файл"; color: "#CBD5E1"; font.pixelSize: 12
+                        }
+                        Label {
+                            text: "▾"; color: "#64748B"; font.pixelSize: 9
+                        }
                     }
 
                     HoverHandler { id: fileMenuHover }
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: fileMenu.open()
+                        onClicked: {
+                            if (fileMenuPopup.visible)
+                                fileMenuPopup.close()
+                            else
+                                fileMenuPopup.open()
+                        }
                     }
                 }
 
@@ -264,9 +276,11 @@ ApplicationWindow {
                                 model: controller.subsystemModel
                                 interactive: false; clip: true
 
+                                property var appController: controller
+
                                 delegate: SidebarSubsystemItem {
                                     width: subsystemNavList.width
-                                    subsystemName: model.name.replace(/\\n/g, ' ')
+                                    subsystemName: model.name.replace(/ ?\\n ?/g, ' ').trim()
                                     iconKey: model.icon || "settings"
                                     selected: reportPageIndex === (index + 1)
                                     onClicked: {
@@ -274,10 +288,11 @@ ApplicationWindow {
                                         reportPageIndex = index + 1
                                     }
                                     onRemoveClicked: {
-                                        controller.removeSubsystem(index)
-                                        if (selectedSubsystemIndex >= controller.subsystemModel.count)
-                                            selectedSubsystemIndex = controller.subsystemModel.count - 1
-                                        if (reportPageIndex > controller.subsystemModel.count)
+                                        var i = index
+                                        subsystemNavList.appController.removeSubsystem(i)
+                                        if (selectedSubsystemIndex >= subsystemNavList.appController.subsystemModel.count)
+                                            selectedSubsystemIndex = subsystemNavList.appController.subsystemModel.count - 1
+                                        if (reportPageIndex > subsystemNavList.appController.subsystemModel.count)
                                             reportPageIndex = 0
                                     }
                                 }
@@ -285,7 +300,7 @@ ApplicationWindow {
 
                             SidebarNavItem {
                                 Layout.fillWidth: true; Layout.topMargin: 4
-                                iconSource: "qrc:/resources/icons/settings.svg"
+                                iconSource: "qrc:/resources/icons/recommendations.svg"
                                 label: "Рекомендации"
                                 selected: reportPageIndex === controller.subsystemModel.count + 1
                                 onClicked: reportPageIndex = controller.subsystemModel.count + 1
@@ -378,37 +393,119 @@ ApplicationWindow {
         }
     }
 
-    // ── File menu (popup) ─────────────────────────────────────────────────────
-    Menu {
-        id: fileMenu
+    // ── File menu popup ───────────────────────────────────────────────────────
+    Popup {
+        id: fileMenuPopup
+        parent: Overlay.overlay
+        width: 220
+        padding: 6
+        modal: false
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        Action {
-            text: "Новый отчёт"; shortcut: StandardKey.New
-            onTriggered: controller.newReport()
+        onAboutToShow: {
+            var globalPos = fileMenuBtn.mapToItem(null, 0, fileMenuBtn.height + 4)
+            var overlayPos = Overlay.overlay.mapFromItem(null, globalPos.x, globalPos.y)
+            x = overlayPos.x
+            y = overlayPos.y
         }
-        Action {
-            text: "Открыть..."; shortcut: StandardKey.Open
-            onTriggered: openDialog.open()
+
+        background: Rectangle {
+            color: "#1E293B"
+            radius: 8
+            border.color: "#334155"; border.width: 1
+            layer.enabled: true
+            layer.effect: null
         }
-        MenuSeparator {}
-        Action {
-            text: "Сохранить"; shortcut: StandardKey.Save
-            enabled: controller.isModified
-            onTriggered: controller.currentFilePath === "" ? saveAsDialog.open() : controller.saveFile()
+
+        // Helper component for menu items
+        component FileMenuItem: Rectangle {
+            property string label: ""
+            property bool separator: false
+            property bool danger: false
+            property bool disabled: false
+
+            signal triggered()
+
+            Layout.fillWidth: true
+            implicitHeight: separator ? 9 : 36
+            color: "transparent"
+            radius: 6
+
+            // Separator line
+            Rectangle {
+                visible: parent.separator
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left; anchors.right: parent.right
+                anchors.leftMargin: 4; anchors.rightMargin: 4
+                height: 1; color: "#334155"
+            }
+
+            Rectangle {
+                visible: !parent.separator
+                anchors.fill: parent
+                radius: 6
+                color: !parent.disabled && itemMouse.containsMouse
+                       ? (parent.danger ? "#7F1D1D" : "#334155")
+                       : "transparent"
+
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left; anchors.leftMargin: 12
+                    text: label
+                    font.pixelSize: 13
+                    color: parent.parent.disabled
+                           ? "#4B5563"
+                           : (parent.parent.danger ? "#FCA5A5" : "#E2E8F0")
+                }
+
+                MouseArea {
+                    id: itemMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: parent.parent.disabled ? Qt.ArrowCursor : Qt.PointingHandCursor
+                    enabled: !parent.parent.disabled
+                    onClicked: {
+                        fileMenuPopup.close()
+                        parent.parent.parent.triggered()
+                    }
+                }
+            }
         }
-        Action {
-            text: "Сохранить как..."; shortcut: StandardKey.SaveAs
-            onTriggered: saveAsDialog.open()
-        }
-        MenuSeparator {}
-        Action {
-            text: "Экспортировать TXT..."
-            onTriggered: exportDialog.open()
-        }
-        MenuSeparator {}
-        Action {
-            text: "Выход"; shortcut: StandardKey.Quit
-            onTriggered: Qt.quit()
+
+        contentItem: ColumnLayout {
+            spacing: 0
+            width: fileMenuPopup.width - 12
+
+            FileMenuItem {
+                label: "Новый отчёт"
+                onTriggered: controller.newReport()
+            }
+            FileMenuItem {
+                label: "Открыть..."
+                onTriggered: openDialog.open()
+            }
+            FileMenuItem { separator: true }
+            FileMenuItem {
+                label: "Сохранить"
+                disabled: !controller.isModified
+                onTriggered: controller.currentFilePath === "" ? saveAsDialog.open() : controller.saveFile()
+            }
+            FileMenuItem {
+                label: "Сохранить как..."
+                onTriggered: saveAsDialog.open()
+            }
+            FileMenuItem { separator: true }
+            FileMenuItem {
+                label: "Экспортировать TXT..."
+                onTriggered: exportDialog.open()
+            }
+            FileMenuItem { separator: true }
+            FileMenuItem {
+                label: "Выход"
+                danger: true
+                onTriggered: Qt.quit()
+            }
         }
     }
 
@@ -431,30 +528,44 @@ ApplicationWindow {
     }
 
     // ── Add Subsystem dialog ──────────────────────────────────────────────────
-    Dialog {
+    Popup {
         id: addSubsystemDialog
-        modal: true; anchors.centerIn: parent; width: 420; padding: 0
+        modal: true
+        anchors.centerIn: parent
+        width: 420
+        padding: 0
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
 
-        background: Rectangle { color: "white"; radius: 8 }
-
-        header: Rectangle {
-            implicitHeight: 52; color: "white"; radius: 8
-            Label {
-                anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
-                anchors.leftMargin: 20
-                text: "Добавить подсистему"
-                font.pixelSize: 15; font.weight: Font.Medium; color: "#111827"
-            }
+        background: Rectangle {
+            color: "white"; radius: 10
+            border.color: "#E5E7EB"; border.width: 1
         }
 
-        contentItem: ColumnLayout {
-            spacing: 0; width: addSubsystemDialog.width - 2
+        contentItem: Column {
+            spacing: 0
+            width: addSubsystemDialog.width
 
+            // Header
+            Item {
+                width: parent.width; height: 56
+                Label {
+                    anchors.left: parent.left; anchors.leftMargin: 20
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Добавить подсистему"
+                    font.pixelSize: 15; font.weight: Font.Medium; color: "#111827"
+                }
+                Rectangle {
+                    anchors.bottom: parent.bottom
+                    width: parent.width; height: 1; color: "#E5E7EB"
+                }
+            }
+
+            // List
             Repeater {
-                model: controller.subsystemNamePresets()
+                model: addSubsystemDialog.visible ? controller.subsystemNamePresets() : []
                 delegate: Rectangle {
-                    Layout.fillWidth: true; implicitHeight: 48
-                    color: itemHover.containsMouse ? "#F3F4F6" : "white"
+                    width: parent.width; height: 48
+                    color: itemMouse.containsMouse ? "#F3F4F6" : "white"
 
                     property bool alreadyAdded: {
                         for (let i = 0; i < controller.subsystemModel.count; i++) {
@@ -467,32 +578,39 @@ ApplicationWindow {
                         return false
                     }
 
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 12
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: parent.left; anchors.right: parent.right
+                        anchors.leftMargin: 16; anchors.rightMargin: 16
+                        spacing: 12
 
                         Image {
+                            anchors.verticalCenter: parent.verticalCenter
                             source: "qrc:/resources/icons/" + controller.iconForSubsystem(modelData) + ".svg"
                             width: 18; height: 18
-                            opacity: alreadyAdded ? 0.35 : 0.55
+                            opacity: alreadyAdded ? 0.3 : 0.6
                         }
 
                         Label {
+                            anchors.verticalCenter: parent.verticalCenter
                             text: modelData.replace(/ ?\\n ?/g, ' ')
                             font.pixelSize: 14
                             color: alreadyAdded ? "#9CA3AF" : "#111827"
-                            Layout.fillWidth: true
                         }
 
+                        Item { width: 1; height: 1 }  // spacer
+
                         Label {
-                            visible: alreadyAdded; text: "Добавлено"
-                            font.pixelSize: 12; color: "#9CA3AF"
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: alreadyAdded; text: "✓"
+                            font.pixelSize: 13; color: "#9CA3AF"
                         }
                     }
 
-                    HoverHandler { id: itemHover }
                     MouseArea {
+                        id: itemMouse
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: alreadyAdded ? Qt.ArrowCursor : Qt.PointingHandCursor
                         enabled: !alreadyAdded
                         onClicked: {
@@ -504,19 +622,30 @@ ApplicationWindow {
                 }
             }
 
-            Rectangle {
-                Layout.fillWidth: true; implicitHeight: 1; color: "#E5E7EB"
-                Layout.topMargin: 4
-            }
-        }
+            // Footer
+            Item {
+                width: parent.width; height: 52
+                Rectangle {
+                    anchors.top: parent.top
+                    width: parent.width; height: 1; color: "#E5E7EB"
+                }
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: closePresetsBtn.implicitWidth + 32; height: 36; radius: 6
+                    color: closeBtnHover.containsMouse ? "#F3F4F6" : "white"
+                    border.color: "#E5E7EB"; border.width: 1
 
-        footer: Rectangle {
-            implicitHeight: 52; color: "white"; radius: 8
-            Button {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Закрыть"; flat: true; font.pixelSize: 14
-                onClicked: addSubsystemDialog.close()
+                    Label {
+                        id: closePresetsBtn
+                        anchors.centerIn: parent
+                        text: "Закрыть"; font.pixelSize: 14; color: "#374151"
+                    }
+                    HoverHandler { id: closeBtnHover }
+                    MouseArea {
+                        anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                        onClicked: addSubsystemDialog.close()
+                    }
+                }
             }
         }
     }

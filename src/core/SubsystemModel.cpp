@@ -159,6 +159,7 @@ void SubsystemModel::removeCheckItem(int subsystemIndex, int checkIndex)
     notifyRow(subsystemIndex);
 }
 
+
 QVariantMap SubsystemModel::getSubsystem(int index) const
 {
     if (index < 0 || index >= m_data.size()) return {};

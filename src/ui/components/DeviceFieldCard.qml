@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Bctl
 import QtQuick.Layouts
 
 // Single field card: label above, text input below, rounded border
@@ -32,13 +33,14 @@ Rectangle {
             color: "#6B7280"
         }
 
-        TextField {
+        Bctl.TextField {
             id: field
             Layout.fillWidth: true
             text: root.fieldValue
             placeholderText: root.fieldPlaceholder
             font.pixelSize: 14
             color: "#111827"
+            placeholderTextColor: "#94A3B8"
             leftPadding: 10
             rightPadding: 10
             topPadding: 8
@@ -51,7 +53,6 @@ Rectangle {
             }
             onEditingFinished: root.fieldChanged(text)
 
-            // Sync back when controller updates (e.g. new report / open file)
             Binding {
                 target: field
                 property: "text"

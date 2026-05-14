@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Bctl
 import QtQuick.Layouts
 
 // Detail panel for a selected subsystem.
@@ -120,23 +121,19 @@ Item {
 
                         Label { text: "Название подсистемы"; font.pixelSize: 13; color: "#6B7280" }
 
-                        RowLayout {
+                        Bctl.TextField {
+                            id: nameField
                             Layout.fillWidth: true
-                            spacing: 8
-
-                            TextField {
-                                id: nameField
-                                Layout.fillWidth: true
-                                placeholderText: "напр. Дисковая подсистема"
-                                font.pixelSize: 14; color: "#111827"
-                                leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
-                                background: Rectangle {
-                                    color: "#F9FAFB"; radius: 6
-                                    border.color: nameField.activeFocus ? "#3B82F6" : "#E5E7EB"
-                                    border.width: nameField.activeFocus ? 1.5 : 1
-                                }
-                                onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "name", text)
+                            placeholderText: "напр. Дисковая подсистема"
+                            placeholderTextColor: "#94A3B8"
+                            font.pixelSize: 14; color: "#111827"
+                            leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
+                            background: Rectangle {
+                                color: "#F9FAFB"; radius: 6
+                                border.color: nameField.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                border.width: nameField.activeFocus ? 1.5 : 1
                             }
+                            onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "name", text)
                         }
                     }
                 }
@@ -155,12 +152,13 @@ Item {
 
                         Label { text: "Контроллер"; font.pixelSize: 13; color: "#6B7280" }
 
-                        TextArea {
+                        Bctl.TextArea {
                             id: controllerArea
                             Layout.fillWidth: true
                             implicitHeight: 64
-                            placeholderText: "напр. Raptor Lake SATA AHCI Controller \\n[**8086:7a62**]"
-                            wrapMode: TextArea.Wrap
+                            placeholderText: "напр. Raptor Lake SATA AHCI Controller\n[**8086:7a62**]"
+                            placeholderTextColor: "#94A3B8"
+                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"
                             topPadding: 8; leftPadding: 10; rightPadding: 10; bottomPadding: 8
                             background: Rectangle {
@@ -224,10 +222,11 @@ Item {
                         RowLayout {
                             Layout.fillWidth: true; spacing: 8
 
-                            TextField {
+                            Bctl.TextField {
                                 id: ifaceField
                                 Layout.fillWidth: true
-                                placeholderText: "напр. Serial ATA  или  1x HDMI \\n 1x VGA"
+                                placeholderText: "напр. Serial ATA  или  1× HDMI, 1× VGA"
+                                placeholderTextColor: "#94A3B8"
                                 font.pixelSize: 14; color: "#111827"
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
                                 background: Rectangle {
@@ -274,10 +273,11 @@ Item {
                         RowLayout {
                             Layout.fillWidth: true; spacing: 8
 
-                            TextField {
+                            Bctl.TextField {
                                 id: driverField
                                 Layout.fillWidth: true
                                 placeholderText: "напр. devb-ahci"
+                                placeholderTextColor: "#94A3B8"
                                 font.pixelSize: 14; color: "#111827"
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
                                 background: Rectangle {
@@ -345,10 +345,11 @@ Item {
                                         horizontalAlignment: Text.AlignRight
                                     }
 
-                                    TextField {
+                                    Bctl.TextField {
                                         Layout.fillWidth: true
                                         text: modelData
                                         font.pixelSize: 14; color: "#111827"
+                                        placeholderTextColor: "#94A3B8"
                                         background: null; leftPadding: 0
                                         onEditingFinished: {
                                             const items = checksRepeater.model.slice()
@@ -388,10 +389,11 @@ Item {
 
                                 Label { text: "+"; font.pixelSize: 16; color: "#6B7280" }
 
-                                TextField {
+                                Bctl.TextField {
                                     id: checkField
                                     Layout.fillWidth: true
                                     placeholderText: "Добавить пункт..."
+                                    placeholderTextColor: "#94A3B8"
                                     font.pixelSize: 14; background: null; leftPadding: 0
                                     onAccepted: root.addCheck()
                                 }
@@ -453,11 +455,12 @@ Item {
 
                         Label { text: "Примечание"; font.pixelSize: 13; color: "#6B7280" }
 
-                        TextArea {
+                        Bctl.TextArea {
                             id: noteArea
                             Layout.fillWidth: true; implicitHeight: 72
                             placeholderText: "Примечание для итоговой таблицы"
-                            wrapMode: TextArea.Wrap
+                            placeholderTextColor: "#94A3B8"
+                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"
                             topPadding: 8; leftPadding: 10; rightPadding: 10; bottomPadding: 8
                             background: Rectangle {
@@ -585,12 +588,13 @@ Item {
                         }
 
                         // Hint text area
-                        TextArea {
+                        Bctl.TextArea {
                             id: hintArea
                             visible: hintEnabled
                             Layout.fillWidth: true; implicitHeight: 64
                             placeholderText: "Текст замечания @hint..."
-                            wrapMode: TextArea.Wrap
+                            placeholderTextColor: "#94A3B8"
+                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"
                             topPadding: 8; leftPadding: 10; rightPadding: 10; bottomPadding: 8
                             background: Rectangle {
@@ -602,12 +606,13 @@ Item {
                         }
 
                         // Caution text area
-                        TextArea {
+                        Bctl.TextArea {
                             id: cautionArea
                             visible: cautionEnabled
                             Layout.fillWidth: true; implicitHeight: 64
                             placeholderText: "Текст предупреждения @caution..."
-                            wrapMode: TextArea.Wrap
+                            placeholderTextColor: "#94A3B8"
+                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"
                             topPadding: 8; leftPadding: 10; rightPadding: 10; bottomPadding: 8
                             background: Rectangle {
@@ -619,12 +624,13 @@ Item {
                         }
 
                         // Warning text area
-                        TextArea {
+                        Bctl.TextArea {
                             id: warningArea
                             visible: warningEnabled
                             Layout.fillWidth: true; implicitHeight: 64
                             placeholderText: "Текст ошибки @warning..."
-                            wrapMode: TextArea.Wrap
+                            placeholderTextColor: "#94A3B8"
+                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"
                             topPadding: 8; leftPadding: 10; rightPadding: 10; bottomPadding: 8
                             background: Rectangle {

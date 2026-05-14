@@ -86,11 +86,19 @@ void SubsystemModel::setSubsystems(const QList<SubsystemEntry>& subsystems)
 
 void SubsystemModel::addSubsystem(const QString& name)
 {
+    insertSubsystem(m_data.size(), name);
+}
+
+void SubsystemModel::insertSubsystem(int row, const QString& name)
+{
+    if (row < 0) row = 0;
+    if (row > m_data.size()) row = m_data.size();
+
     SubsystemEntry e;
     e.name = name;
     e.testResult = QStringLiteral("успешно");
-    beginInsertRows({}, m_data.size(), m_data.size());
-    m_data << e;
+    beginInsertRows({}, row, row);
+    m_data.insert(row, e);
     endInsertRows();
     emit countChanged();
 }
@@ -102,16 +110,6 @@ void SubsystemModel::removeSubsystem(int index)
     m_data.removeAt(index);
     endRemoveRows();
     emit countChanged();
-}
-
-void SubsystemModel::moveSubsystem(int from, int to)
-{
-    if (from == to || from < 0 || to < 0 ||
-        from >= m_data.size() || to >= m_data.size()) return;
-
-    beginMoveRows({}, from, from, {}, to > from ? to + 1 : to);
-    m_data.move(from, to);
-    endMoveRows();
 }
 
 void SubsystemModel::setField(int index, const QString& field, const QVariant& value)

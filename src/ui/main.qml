@@ -10,8 +10,8 @@ ApplicationWindow {
     visible: true
     width: 1280
     height: 800
-    minimumWidth: 960
-    minimumHeight: 600
+    minimumWidth: 800
+    minimumHeight: 560
     title: controller.windowTitle + " — Report Assistant"
     flags: Qt.Window | Qt.FramelessWindowHint
 
@@ -202,12 +202,6 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 color: "#F8F9FA"
 
-                Rectangle {
-                    anchors.right: parent.right
-                    anchors.top: parent.top; anchors.bottom: parent.bottom
-                    width: 1; color: "#E5E7EB"
-                }
-
                 ColumnLayout {
                     anchors.fill: parent
                     spacing: 0
@@ -329,6 +323,16 @@ ApplicationWindow {
                         visible: mainTabIndex === 0
                     }
                 }
+
+                // Right edge — must paint above list row backgrounds or the divider disappears.
+                Rectangle {
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: 1
+                    color: "#E5E7EB"
+                    z: 2
+                }
             }
 
             // ── Main content area ─────────────────────────────────────────────
@@ -389,6 +393,80 @@ ApplicationWindow {
                         onSaveAsRequested:  saveAsDialog.open()
                     }
                 }
+            }
+        }
+    }
+
+    // Frameless window: OS resize frame is absent — thin hit-targets on edges and corner.
+    Item {
+        id: resizeEdges
+        anchors.fill: parent
+        z: 100
+        visible: root.visibility !== Window.FullScreen
+
+        readonly property bool allowResize: root.visibility === Window.Windowed
+
+        MouseArea {
+            anchors.right: parent.right
+            width: 10
+            anchors.top: parent.top
+            anchors.topMargin: 44
+            anchors.bottom: parent.bottom
+            enabled: resizeEdges.allowResize
+            hoverEnabled: true
+            cursorShape: Qt.SizeHorCursor
+            property real _startWidth: 0
+            property real _startGlobalX: 0
+            onPressed: function(mouse) {
+                _startWidth = root.width
+                _startGlobalX = mouse.globalX
+            }
+            onPositionChanged: function(mouse) {
+                if (!pressed) return
+                root.width = Math.max(root.minimumWidth, _startWidth + (mouse.globalX - _startGlobalX))
+            }
+        }
+        MouseArea {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: 10
+            enabled: resizeEdges.allowResize
+            hoverEnabled: true
+            cursorShape: Qt.SizeVerCursor
+            property real _startHeight: 0
+            property real _startGlobalY: 0
+            onPressed: function(mouse) {
+                _startHeight = root.height
+                _startGlobalY = mouse.globalY
+            }
+            onPositionChanged: function(mouse) {
+                if (!pressed) return
+                root.height = Math.max(root.minimumHeight, _startHeight + (mouse.globalY - _startGlobalY))
+            }
+        }
+        MouseArea {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            width: 14
+            height: 14
+            enabled: resizeEdges.allowResize
+            hoverEnabled: true
+            cursorShape: Qt.SizeFDiagCursor
+            property real _startW: 0
+            property real _startH: 0
+            property real _startGX: 0
+            property real _startGY: 0
+            onPressed: function(mouse) {
+                _startW = root.width
+                _startH = root.height
+                _startGX = mouse.globalX
+                _startGY = mouse.globalY
+            }
+            onPositionChanged: function(mouse) {
+                if (!pressed) return
+                root.width = Math.max(root.minimumWidth, _startW + (mouse.globalX - _startGX))
+                root.height = Math.max(root.minimumHeight, _startH + (mouse.globalY - _startGY))
             }
         }
     }

@@ -39,8 +39,9 @@ public:
     QList<SubsystemEntry> subsystems() const { return m_data; }
 
     Q_INVOKABLE void addSubsystem(const QString& name);
+    /// Insert a new subsystem at \a row (clamped). Preserves report order vs append.
+    Q_INVOKABLE void insertSubsystem(int row, const QString& name);
     Q_INVOKABLE void removeSubsystem(int index);
-    Q_INVOKABLE void moveSubsystem(int from, int to);
 
     // Field setters for the currently selected subsystem (called from detail panel)
     Q_INVOKABLE void setField(int index, const QString& field, const QVariant& value);

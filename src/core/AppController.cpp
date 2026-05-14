@@ -131,15 +131,28 @@ void AppController::newReport()
 
 void AppController::addSubsystem(const QString& name)
 {
-    m_subsystemModel->addSubsystem(name);
-    const int idx = m_subsystemModel->rowCount() - 1;
+    const QStringList presetOrder = m_presets.subsystemNames();
+    auto presetRank = [&](const QString& subsystemName) -> int {
+        const int r = presetOrder.indexOf(subsystemName);
+        return r >= 0 ? r : 0x7fffffff;
+    };
+    const int newRank = presetRank(name);
+    int insertAt = m_subsystemModel->rowCount();
+    for (int i = 0; i < m_subsystemModel->rowCount(); ++i) {
+        const QString existing = m_subsystemModel->subsystems().at(i).name;
+        if (presetRank(existing) > newRank) {
+            insertAt = i;
+            break;
+        }
+    }
+
+    m_subsystemModel->insertSubsystem(insertAt, name);
     // Apply default checks and icon from presets
     const QStringList checks = m_presets.checksForSubsystem(name);
     if (!checks.isEmpty())
-        m_subsystemModel->setCheckItems(idx, checks);
+        m_subsystemModel->setCheckItems(insertAt, checks);
     const QString icon = m_presets.iconForSubsystem(name);
-    m_subsystemModel->setField(idx, QStringLiteral("icon"), icon);
-    setModified(true);
+    m_subsystemModel->setField(insertAt, QStringLiteral("icon"), icon);
 }
 
 void AppController::removeSubsystem(int index)

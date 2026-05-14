@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Bctl
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 
@@ -83,11 +84,12 @@ Item {
                         RowLayout {
                             Layout.fillWidth: true; spacing: 8
 
-                            TextField {
+                            Bctl.TextField {
                                 id: ramField
                                 Layout.fillWidth: true
                                 text: controller.deviceRam
                                 placeholderText: "напр. DDR4 16384 MB"
+                                placeholderTextColor: "#94A3B8"
                                 font.pixelSize: 14; color: "#111827"
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
                                 background: Rectangle {
@@ -192,13 +194,14 @@ Item {
                             color: "#6B7280"
                         }
 
-                        TextArea {
+                        Bctl.TextArea {
                             id: osNoteArea
                             Layout.fillWidth: true
                             implicitHeight: 72
                             text: controller.osTestNote
                             placeholderText: "напр. Установка с USB Flash"
-                            wrapMode: TextArea.Wrap
+                            placeholderTextColor: "#94A3B8"
+                            wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14
                             color: "#111827"
                             topPadding: 8
@@ -273,10 +276,11 @@ Item {
                                         horizontalAlignment: Text.AlignRight
                                     }
 
-                                    TextField {
+                                    Bctl.TextField {
                                         Layout.fillWidth: true
                                         text: modelData
                                         font.pixelSize: 14; color: "#111827"
+                                        placeholderTextColor: "#94A3B8"
                                         background: null; leftPadding: 0
                                         onEditingFinished: controller.setOsCheckItem(index, text)
                                     }
@@ -320,10 +324,11 @@ Item {
                                     color: "#6B7280"
                                 }
 
-                                TextField {
+                                Bctl.TextField {
                                     id: osCheckField
                                     Layout.fillWidth: true
                                     placeholderText: "Добавить пункт..."
+                                    placeholderTextColor: "#94A3B8"
                                     font.pixelSize: 14
                                     background: null
                                     leftPadding: 0

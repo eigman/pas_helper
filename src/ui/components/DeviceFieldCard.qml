@@ -3,13 +3,14 @@ import QtQuick.Controls
 import QtQuick.Controls.Basic as Bctl
 import QtQuick.Layouts
 
-// Single field card: label above, text input below, rounded border
+// Single field card: label (+ optional help), text input with gray placeholder example.
 Rectangle {
     id: root
 
     property string fieldLabel: ""
     property string fieldPlaceholder: ""
     property string fieldValue: ""
+    property var fieldHelpExamples: []
 
     signal fieldChanged(string value)
 
@@ -27,10 +28,10 @@ Rectangle {
         anchors.margins: 16
         spacing: 8
 
-        Label {
-            text: root.fieldLabel
-            font.pixelSize: 13
-            color: "#6B7280"
+        FieldLabelRow {
+            Layout.fillWidth: true
+            labelText: root.fieldLabel
+            helpExamples: root.fieldHelpExamples
         }
 
         Bctl.TextField {

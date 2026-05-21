@@ -16,6 +16,8 @@ set(SOURCES
     src/core/ReportParser.cpp
     src/core/PciAnalyzer.cpp
     src/core/PresetManager.cpp
+    src/core/ExamplesManager.cpp
+    src/core/RecommendationsConverter.cpp
     src/core/Storage.cpp
     src/core/SubsystemModel.cpp
     src/core/PciDeviceModel.cpp
@@ -41,6 +43,8 @@ set_source_files_properties(src/ui/components/PresetsPopup.qml           PROPERT
 set_source_files_properties(src/ui/components/PresetPickerPopup.qml      PROPERTIES QT_RESOURCE_ALIAS PresetPickerPopup.qml)
 set_source_files_properties(src/ui/components/InterfacePickerPopup.qml   PROPERTIES QT_RESOURCE_ALIAS InterfacePickerPopup.qml)
 set_source_files_properties(src/ui/components/RamPickerPopup.qml         PROPERTIES QT_RESOURCE_ALIAS RamPickerPopup.qml)
+set_source_files_properties(src/ui/components/FieldHelpIcon.qml           PROPERTIES QT_RESOURCE_ALIAS FieldHelpIcon.qml)
+set_source_files_properties(src/ui/components/FieldLabelRow.qml          PROPERTIES QT_RESOURCE_ALIAS FieldLabelRow.qml)
 
 qt_add_qml_module(ReportAssistant
     URI ReportAssistant
@@ -61,6 +65,8 @@ qt_add_qml_module(ReportAssistant
         src/ui/components/PresetPickerPopup.qml
         src/ui/components/InterfacePickerPopup.qml
         src/ui/components/RamPickerPopup.qml
+        src/ui/components/FieldHelpIcon.qml
+        src/ui/components/FieldLabelRow.qml
 )
 
 # Resources (presets JSON + icons) embedded via Qt resource system
@@ -68,6 +74,7 @@ qt_add_resources(ReportAssistant "appresources"
     PREFIX "/"
     FILES
         resources/presets/subsystems.json
+        resources/presets/field_examples.json
         resources/icons/disk.svg
         resources/icons/monitor.svg
         resources/icons/network.svg
@@ -79,6 +86,9 @@ qt_add_resources(ReportAssistant "appresources"
         resources/icons/settings.svg
         resources/icons/pci.svg
         resources/icons/recommendations.svg
+        resources/icons/remark-hint.svg
+        resources/icons/remark-caution.svg
+        resources/icons/remark-error.svg
 )
 
 target_link_libraries(ReportAssistant PRIVATE

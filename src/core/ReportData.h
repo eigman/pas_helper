@@ -28,7 +28,7 @@ struct SubsystemEntry {
     QString driver;
 
     // @group report fields
-    QString testResult { QStringLiteral("успешно") };
+    QString testResult { QStringLiteral("Успешно") };
     QString testNote;
 
     // @group tests fields
@@ -36,6 +36,9 @@ struct SubsystemEntry {
     QString hintText;    // content of @hint block (empty = no hint)
     QString cautionText; // content of @caution block (empty = no caution)
     QString warningText; // content of @warning block (empty = no warning)
+    bool hintActive = false;
+    bool cautionActive = false;
+    bool warningActive = false;
 
     // Returns name with \n stripped and collapsed to a space
     // Used in @group report table and @term blocks
@@ -49,12 +52,15 @@ struct SubsystemEntry {
 
 // The "Установка и запуск ОС" entry — always first in report/tests, never in device table
 struct OsInstallEntry {
-    QString testResult { QStringLiteral("успешно") };
+    QString testResult { QStringLiteral("Успешно") };
     QString testNote;
     QList<CheckItem> checkItems;
     QString hintText;
     QString cautionText;
     QString warningText;
+    bool hintActive = false;
+    bool cautionActive = false;
+    bool warningActive = false;
 };
 
 // Device hardware parameters (first table in @group device)
@@ -74,7 +80,8 @@ struct ReportData {
     DeviceParams device;
     OsInstallEntry osInstall;
     QList<SubsystemEntry> subsystems;
-    QString recommendations; // content of @group recomendations
+    QString recommendations;     // markup for @group recomendations (generated on export)
+    QString recommendationsJson;   // UI blocks JSON (saved in progress)
 
     bool isEmpty() const {
         return device.pageTitle.isEmpty() && subsystems.isEmpty();

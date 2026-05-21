@@ -11,14 +11,14 @@
       "name": "Графическая \\n подсистема",
       "icon": "monitor",
       "defaultChecks": [
-        "Работоспособность конфигурации с единственным монитором"
+        "Работоспособность конфигурации с единственным монитором (интерфейсы: *, *)"
       ]
     },
     {
       "name": "Сетевая подсистема",
       "icon": "network",
       "defaultChecks": [
-        "Работоспособность интерфейсов Ethernet"
+        "Работоспособность интерфейсов Ethernet x1"
       ]
     },
     {
@@ -31,6 +31,9 @@
     {
       "name": "Подсистема ввода",
       "icon": "keyboard",
+      "defaultController": "-",
+      "defaultInterfaces": "USB",
+      "defaultDriver": "devh-usb.so",
       "defaultChecks": [
         "Работоспособность USB-клавиатуры и мыши"
       ]
@@ -47,67 +50,41 @@
       "name": "Последовательные порты",
       "icon": "serial",
       "defaultChecks": [
-        "Проверка передачи данных для каждого из портов в соответствующем режиме"
+        "Проверка передачи данных в порт и из порта"
       ]
     }
   ],
-  "drivers": [
-    "devb-ahci",
-    "devb-nvme",
-    "devg-flat.so",
-    "devg-skylake.so",
-    "devg-intel.so",
-    "devnp-realtek.so",
-    "devnp-rtl8169.so",
-    "devnp-e1000.so",
-    "devnp-e1000e.so",
-    "devnp-i40e.so",
-    "devu-xhci.so",
-    "devu-ehci.so",
-    "devh-usb.so",
-    "deva-ctrl-intel_hda.so",
-    "deva-mixer-hda.so",
-    "devc-ser8250",
-    "devc-serpl2303.so"
-  ],
-  "interfaces": [
-    "Serial ATA",
-    "NVMe",
-    "1x HDMI",
-    "1x HDMI 1.4",
-    "2x HDMI",
-    "1x VGA",
-    "1x DP",
-    "2x DP",
-    "1x DVI",
-    "1x Ethernet",
-    "2x Ethernet",
-    "4x Ethernet",
-    "4x USB 3.0",
-    "2x USB 3.0",
-    "7x USB 3.2",
-    "4x USB 3.2",
-    "4x USB 2.0",
-    "2x USB 2.0",
-    "2x USB Type-C",
-    "1x USB Type-C",
-    "USB",
-    "Audio in",
-    "2x Out",
-    "1x Out",
-    "1x RS-232/485",
-    "4x RS-232",
-    "2x RS-232",
-    "1x RS-232",
-    "1x RS-485"
-  ],
-  "osInstallChecks": [
-    "Запуск с USB-накопителя",
-    "Запуск в режиме UEFI",
-    "Ручная установка",
+  "fieldPresets": {
+    "drivers": {
+      "disk": ["devb-ahci", "devb-nvme", "devb-sdmmc.so"],
+      "monitor": ["devg-flat.so", "devg-skylake.so"],
+      "network": ["devnp-e1000e.so", "devnp-realtek.so", "devnp-igc.so", "devnp-rtl8169.so"],
+      "usb": ["devu-xhci.so", "devb-umass"],
+      "audio": ["deva-ctrl-intel_hda.so", "deva-mixer-hda.so"],
+      "serial": ["devc-ser8250", "devc-serusb"],
+      "keyboard": ["devh-usb.so"]
+    },
+    "interfaces": {
+      "disk": ["Serial ATA", "MMC", "NVM"],
+      "monitor": ["1x HDMI", "1x VGA", "1x DP", "1x DVI", "1x DVI-D/I", "1x HDMI 2.0", "1x DP 1.4a", "1x miniDP", "1x Type-c DP"],
+      "network": ["1x Ethernet", "1x 2.5Gb Ethernet"],
+      "usb": ["1x USB 3.0", "1x USB 3.2", "1x USB 2.0", "1x USB Type-C", "SD"],
+      "audio": ["Audio in Out", "Audio in 2x Out"],
+      "serial": ["1x RS-232", "1x RS-485", "1x RS-232/485", "1x RS-232/422/485"],
+      "keyboard": ["USB"]
+    }
+  },
+  "defaultOsInstallChecks": [
     "Установка с USB-накопителя",
     "Запуск в режиме LiveDVD",
-    "Запуск в режиме LiveUSB",
-    "Установка на SSD"
+    "Запуск в режиме UEFI"
+  ],
+  "osInstallChecks": [
+    "Установка с USB-накопителя",
+    "Запуск в режиме LiveDVD",
+    "Запуск в режиме UEFI",
+    "Запуск в режиме Legacy",
+    "Ручная установка",
+    "Запуск с накопителя типа USB Flash"
   ]
 }

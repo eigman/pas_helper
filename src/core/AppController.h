@@ -6,6 +6,7 @@
 #include "WorkItemModel.h"
 #include "PciAnalyzer.h"
 #include "PresetManager.h"
+#include "ExamplesManager.h"
 
 #include <QObject>
 #include <QString>
@@ -45,7 +46,8 @@ class AppController : public QObject {
     Q_PROPERTY(WorkItemModel*   workItemModel  READ workItemModel   CONSTANT)
 
     // ── Recommendations + Work notes ─────────────────────────────────────────
-    Q_PROPERTY(QString recommendations READ recommendations WRITE setRecommendations NOTIFY recommendationsChanged)
+    Q_PROPERTY(QVariantList recommendationBlocks READ recommendationBlocks WRITE setRecommendationBlocks NOTIFY recommendationBlocksChanged)
+    Q_PROPERTY(QString recommendationsText READ recommendationsText WRITE setRecommendationsText NOTIFY recommendationsTextChanged)
     Q_PROPERTY(QString workNotes       READ workNotes       WRITE setWorkNotes       NOTIFY workNotesChanged)
 
     // ── PCI status ───────────────────────────────────────────────────────────
@@ -82,6 +84,12 @@ public:
     Q_INVOKABLE QString     iconForSubsystem(const QString& name) const;
     Q_INVOKABLE QStringList driverPresets() const;
     Q_INVOKABLE QStringList interfacePresets() const;
+    Q_INVOKABLE QStringList driverPresetsForSubsystem(int subsystemIndex) const;
+    Q_INVOKABLE QStringList interfacePresetsForSubsystem(int subsystemIndex) const;
+    Q_INVOKABLE QString fieldPlaceholder(const QString& scope, const QString& fieldKey,
+                                         const QString& contextKey = {}) const;
+    Q_INVOKABLE QStringList fieldExamples(const QString& scope, const QString& fieldKey,
+                                          const QString& contextKey = {}) const;
     Q_INVOKABLE QStringList checksPresets(const QString& subsystemName) const;
     Q_INVOKABLE QStringList osInstallChecksPresets() const;
     Q_INVOKABLE QStringList testResultOptions() const;
@@ -111,7 +119,8 @@ public:
     PciDeviceModel* pciModel()        { return m_pciModel; }
     WorkItemModel*  workItemModel()   { return m_workItemModel; }
 
-    QString recommendations() const { return m_data.recommendations; }
+    QVariantList recommendationBlocks() const { return m_recommendationBlocks; }
+    QString recommendationsText() const;
     QString workNotes()       const { return m_workNotes; }
 
     bool    pciIdsLoaded()       const { return m_pciAnalyzer.isPciIdsLoaded(); }
@@ -133,7 +142,8 @@ public:
     void setOsCautionText(const QString& v);
     void setOsWarningText(const QString& v);
 
-    void setRecommendations(const QString& v);
+    void setRecommendationBlocks(const QVariantList& blocks);
+    void setRecommendationsText(const QString& v);
     void setWorkNotes(const QString& v);
 
 signals:
@@ -142,7 +152,8 @@ signals:
     void windowTitleChanged();
     void deviceChanged();
     void osInstallChanged();
-    void recommendationsChanged();
+    void recommendationBlocksChanged();
+    void recommendationsTextChanged();
     void workNotesChanged();
     void pciStatusChanged();
     void errorOccurred(const QString& message);
@@ -164,4 +175,6 @@ private:
 
     PciAnalyzer      m_pciAnalyzer;
     PresetManager    m_presets;
+    ExamplesManager  m_examples;
+    QVariantList     m_recommendationBlocks;
 };

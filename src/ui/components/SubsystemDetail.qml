@@ -11,6 +11,12 @@ Item {
 
     signal openPciRequested()
 
+    readonly property string subsystemIcon: {
+        if (root.subsystemIndex < 0) return ""
+        const s = controller.subsystemModel.getSubsystem(root.subsystemIndex)
+        return s["icon"] || controller.iconForSubsystem(s["name"] || "")
+    }
+
     function reload() {
         if (subsystemIndex < 0) return
         root.checkItemsList = controller.subsystemModel.getSubsystem(subsystemIndex)["checkItems"] || []
@@ -25,13 +31,16 @@ Item {
         warningArea.text     = s["warningText"] || ""
 
         const opts = controller.testResultOptions()
-        const ri = opts.indexOf(s["testResult"] || "успешно")
-        currentResult = (ri >= 0 ? opts[ri] : "успешно")
+        const raw = s["testResult"] || "Успешно"
+        const normalized = raw === "успешно" ? "Успешно"
+                           : raw === "частично" ? "Условно успешно"
+                           : raw === "неуспешно" ? "Неуспешно" : raw
+        const ri = opts.indexOf(normalized)
+        currentResult = (ri >= 0 ? opts[ri] : "Успешно")
 
-        // Determine active remark types
-        hintEnabled    = (s["hintText"]    || "") !== ""
-        cautionEnabled = (s["cautionText"] || "") !== ""
-        warningEnabled = (s["warningText"] || "") !== ""
+        hintEnabled    = !!s["hintActive"]
+        cautionEnabled = !!s["cautionActive"]
+        warningEnabled = !!s["warningActive"]
     }
 
     onSubsystemIndexChanged: reload()
@@ -39,13 +48,12 @@ Item {
     Connections {
         target: controller.subsystemModel
         function onDataChanged() {
-            root.reload()
             if (root.subsystemIndex >= 0)
                 root.checkItemsList = controller.subsystemModel.getSubsystem(root.subsystemIndex)["checkItems"] || []
         }
     }
 
-    property string currentResult: "успешно"
+    property string currentResult: "Успешно"
     property bool hintEnabled: false
     property bool cautionEnabled: false
     property bool warningEnabled: false
@@ -55,12 +63,35 @@ Item {
         return controller.subsystemModel.getSubsystem(root.subsystemIndex)["checkItems"] || []
     }
 
+    function scrollToItem(item) {
+        if (!item || !detailScroll.contentItem)
+            return
+        scrollToTimer.target = item
+        scrollToTimer.restart()
+    }
+
+    Timer {
+        id: scrollToTimer
+        interval: 80
+        property Item target: null
+        onTriggered: {
+            if (!target || !detailScroll.contentItem)
+                return
+            const y = target.mapToItem(detailColumn, 0, 0).y
+            const flick = detailScroll.contentItem
+            const maxY = Math.max(0, flick.contentHeight - flick.height)
+            flick.contentY = Math.max(0, Math.min(y - 32, maxY))
+        }
+    }
+
     ScrollView {
+        id: detailScroll
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
 
         ColumnLayout {
+            id: detailColumn
             width: parent.width
             spacing: 0
 
@@ -119,12 +150,16 @@ Item {
                         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
                         spacing: 8
 
-                        Label { text: "Название подсистемы"; font.pixelSize: 13; color: "#6B7280" }
+                        Label {
+                            text: "Название подсистемы"
+                            font.pixelSize: 13
+                            color: "#6B7280"
+                        }
 
                         Bctl.TextField {
                             id: nameField
                             Layout.fillWidth: true
-                            placeholderText: "напр. Дисковая подсистема"
+                            placeholderText: ""
                             placeholderTextColor: "#94A3B8"
                             font.pixelSize: 14; color: "#111827"
                             leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
@@ -138,8 +173,9 @@ Item {
                     }
                 }
 
-                // Controller
+                // Controller (не для подсистемы ввода — контроллер обычно «-»)
                 Rectangle {
+                    visible: root.subsystemIcon !== "keyboard"
                     Layout.fillWidth: true
                     implicitHeight: ctrlCardContent.implicitHeight + 32
                     color: "white"; radius: 8
@@ -150,13 +186,17 @@ Item {
                         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
                         spacing: 8
 
-                        Label { text: "Контроллер"; font.pixelSize: 13; color: "#6B7280" }
+                        FieldLabelRow {
+                            Layout.fillWidth: true
+                            labelText: "Контроллер"
+                            helpExamples: controller.fieldExamples("subsystem", "controller", root.subsystemIcon)
+                        }
 
                         Bctl.TextArea {
                             id: controllerArea
                             Layout.fillWidth: true
                             implicitHeight: 64
-                            placeholderText: "напр. Raptor Lake SATA AHCI Controller\n[**8086:7a62**]"
+                            placeholderText: controller.fieldPlaceholder("subsystem", "controller", root.subsystemIcon)
                             placeholderTextColor: "#94A3B8"
                             wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"
@@ -217,7 +257,11 @@ Item {
                         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
                         spacing: 8
 
-                        Label { text: "Интерфейс(ы)"; font.pixelSize: 13; color: "#6B7280" }
+                        Label {
+                            text: "Интерфейс(ы)"
+                            font.pixelSize: 13
+                            color: "#6B7280"
+                        }
 
                         RowLayout {
                             Layout.fillWidth: true; spacing: 8
@@ -225,7 +269,7 @@ Item {
                             Bctl.TextField {
                                 id: ifaceField
                                 Layout.fillWidth: true
-                                placeholderText: "напр. Serial ATA  или  1× HDMI, 1× VGA"
+                                placeholderText: controller.fieldPlaceholder("subsystem", "interfaces", root.subsystemIcon)
                                 placeholderTextColor: "#94A3B8"
                                 font.pixelSize: 14; color: "#111827"
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
@@ -239,7 +283,7 @@ Item {
 
                             InterfacePickerPopup {
                                 implicitWidth: 110; implicitHeight: 34
-                                presets: controller.interfacePresets()
+                                presets: controller.interfacePresetsForSubsystem(root.subsystemIndex)
                                 onApply: function(v) {
                                     // v contains " \n " separators for the report engine
                                     // show in field without \n for readability
@@ -268,7 +312,11 @@ Item {
                         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
                         spacing: 8
 
-                        Label { text: "Драйвер"; font.pixelSize: 13; color: "#6B7280" }
+                        Label {
+                            text: "Драйвер"
+                            font.pixelSize: 13
+                            color: "#6B7280"
+                        }
 
                         RowLayout {
                             Layout.fillWidth: true; spacing: 8
@@ -276,7 +324,7 @@ Item {
                             Bctl.TextField {
                                 id: driverField
                                 Layout.fillWidth: true
-                                placeholderText: "напр. devb-ahci"
+                                placeholderText: controller.fieldPlaceholder("subsystem", "driver", root.subsystemIcon)
                                 placeholderTextColor: "#94A3B8"
                                 font.pixelSize: 14; color: "#111827"
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
@@ -290,7 +338,7 @@ Item {
 
                             PresetPickerPopup {
                                 implicitWidth: 110; implicitHeight: 34
-                                presets: controller.driverPresets()
+                                presets: controller.driverPresetsForSubsystem(root.subsystemIndex)
                                 onSelected: function(v) {
                                     driverField.text = v
                                     driverField.editingFinished()
@@ -453,12 +501,16 @@ Item {
                         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
                         spacing: 8
 
-                        Label { text: "Примечание"; font.pixelSize: 13; color: "#6B7280" }
+                        FieldLabelRow {
+                            Layout.fillWidth: true
+                            labelText: "Примечание"
+                            helpExamples: controller.fieldExamples("subsystem", "testNote", root.subsystemIcon)
+                        }
 
                         Bctl.TextArea {
                             id: noteArea
                             Layout.fillWidth: true; implicitHeight: 72
-                            placeholderText: "Примечание для итоговой таблицы"
+                            placeholderText: ""
                             placeholderTextColor: "#94A3B8"
                             wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"
@@ -485,75 +537,89 @@ Item {
                         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
                         spacing: 12
 
-                        Label { text: "Типы замечаний"; font.pixelSize: 13; color: "#6B7280" }
-
-                        // Toggle row for Hint / Caution / Warning
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 16
+                            spacing: 6
+
+                            Label {
+                                text: "Типы замечаний"
+                                font.pixelSize: 13
+                                color: "#6B7280"
+                            }
+
+                            FieldHelpIcon {
+                                sections: [
+                                    {
+                                        title: "Замечание",
+                                        examples: controller.fieldExamples("subsystem", "hintText", "")
+                                    },
+                                    {
+                                        title: "Предупреждение",
+                                        examples: controller.fieldExamples("subsystem", "cautionText", "")
+                                    },
+                                    {
+                                        title: "Ошибка",
+                                        examples: controller.fieldExamples("subsystem", "warningText", "")
+                                    }
+                                ]
+                            }
+
+                            Item { Layout.fillWidth: true }
+                        }
+
+                        Row {
+                            Layout.fillWidth: true
+                            spacing: 24
 
                             Repeater {
                                 model: [
-                                    { key: "hint",    label: "Hint",    icon: "ℹ",  color: "#3B82F6" },
-                                    { key: "caution", label: "Caution", icon: "⚠",  color: "#D97706" },
-                                    { key: "warning", label: "Warning", icon: "ℹ",  color: "#DC2626" }
+                                    { key: "hint",    label: "Замечание",      icon: "qrc:/resources/icons/remark-hint.svg"    },
+                                    { key: "caution", label: "Предупреждение", icon: "qrc:/resources/icons/remark-caution.svg" },
+                                    { key: "warning", label: "Ошибка",         icon: "qrc:/resources/icons/remark-error.svg"   }
                                 ]
-                                delegate: RowLayout {
-                                    spacing: 6
-                                    Layout.fillWidth: true
+                                delegate: Row {
+                                    spacing: 8
+                                    height: 28
 
-                                    Label {
-                                        text: modelData.icon
-                                        font.pixelSize: 13
-                                        color: {
-                                            if (modelData.key === "hint")    return hintEnabled    ? modelData.color : "#9CA3AF"
-                                            if (modelData.key === "caution") return cautionEnabled ? modelData.color : "#9CA3AF"
-                                            return warningEnabled ? modelData.color : "#9CA3AF"
-                                        }
+                                    readonly property bool isOn: {
+                                        if (modelData.key === "hint")    return hintEnabled
+                                        if (modelData.key === "caution") return cautionEnabled
+                                        return warningEnabled
                                     }
 
-                                    Rectangle {
-                                        width: 8; height: 8; radius: 4
-                                        color: {
-                                            const enabled = modelData.key === "hint" ? hintEnabled
-                                                          : modelData.key === "caution" ? cautionEnabled
-                                                          : warningEnabled
-                                            return enabled ? modelData.color : "#D1D5DB"
-                                        }
+                                    Image {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 18
+                                        height: 18
+                                        source: modelData.icon
+                                        opacity: parent.isOn ? 1.0 : 0.45
                                     }
 
                                     Label {
+                                        anchors.verticalCenter: parent.verticalCenter
                                         text: modelData.label
-                                        font.pixelSize: 13
-                                        color: {
-                                            const enabled = modelData.key === "hint" ? hintEnabled
-                                                          : modelData.key === "caution" ? cautionEnabled
-                                                          : warningEnabled
-                                            return enabled ? modelData.color : "#6B7280"
-                                        }
-                                        Layout.fillWidth: true
+                                        font.pixelSize: 12
+                                        color: parent.isOn ? "#374151" : "#6B7280"
                                     }
 
-                                    // Toggle switch
                                     Rectangle {
-                                        width: 36; height: 20; radius: 10
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 36
+                                        height: 20
+                                        radius: 10
                                         color: {
-                                            const enabled = modelData.key === "hint" ? hintEnabled
-                                                          : modelData.key === "caution" ? cautionEnabled
-                                                          : warningEnabled
-                                            return enabled ? modelData.color : "#D1D5DB"
+                                            if (modelData.key === "hint")    return parent.isOn ? "#3B82F6" : "#D1D5DB"
+                                            if (modelData.key === "caution") return parent.isOn ? "#D97706" : "#D1D5DB"
+                                            return parent.isOn ? "#DC2626" : "#D1D5DB"
                                         }
 
                                         Rectangle {
-                                            width: 16; height: 16; radius: 8
+                                            width: 16
+                                            height: 16
+                                            radius: 8
                                             color: "white"
                                             anchors.verticalCenter: parent.verticalCenter
-                                            x: {
-                                                const enabled = modelData.key === "hint" ? hintEnabled
-                                                              : modelData.key === "caution" ? cautionEnabled
-                                                              : warningEnabled
-                                                return enabled ? 18 : 2
-                                            }
+                                            x: parent.parent.isOn ? 18 : 2
                                             Behavior on x { NumberAnimation { duration: 100 } }
                                         }
 
@@ -563,22 +629,19 @@ Item {
                                             onClicked: {
                                                 if (modelData.key === "hint") {
                                                     hintEnabled = !hintEnabled
-                                                    if (!hintEnabled) {
-                                                        hintArea.text = ""
-                                                        controller.subsystemModel.setField(root.subsystemIndex, "hintText", "")
-                                                    }
+                                                    controller.subsystemModel.setField(root.subsystemIndex, "hintActive", hintEnabled)
+                                                    if (hintEnabled)
+                                                        root.scrollToItem(hintArea)
                                                 } else if (modelData.key === "caution") {
                                                     cautionEnabled = !cautionEnabled
-                                                    if (!cautionEnabled) {
-                                                        cautionArea.text = ""
-                                                        controller.subsystemModel.setField(root.subsystemIndex, "cautionText", "")
-                                                    }
+                                                    controller.subsystemModel.setField(root.subsystemIndex, "cautionActive", cautionEnabled)
+                                                    if (cautionEnabled)
+                                                        root.scrollToItem(cautionArea)
                                                 } else {
                                                     warningEnabled = !warningEnabled
-                                                    if (!warningEnabled) {
-                                                        warningArea.text = ""
-                                                        controller.subsystemModel.setField(root.subsystemIndex, "warningText", "")
-                                                    }
+                                                    controller.subsystemModel.setField(root.subsystemIndex, "warningActive", warningEnabled)
+                                                    if (warningEnabled)
+                                                        root.scrollToItem(warningArea)
                                                 }
                                             }
                                         }
@@ -592,7 +655,7 @@ Item {
                             id: hintArea
                             visible: hintEnabled
                             Layout.fillWidth: true; implicitHeight: 64
-                            placeholderText: "Текст замечания @hint..."
+                            placeholderText: controller.fieldPlaceholder("subsystem", "hintText", "")
                             placeholderTextColor: "#94A3B8"
                             wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"
@@ -610,7 +673,7 @@ Item {
                             id: cautionArea
                             visible: cautionEnabled
                             Layout.fillWidth: true; implicitHeight: 64
-                            placeholderText: "Текст предупреждения @caution..."
+                            placeholderText: controller.fieldPlaceholder("subsystem", "cautionText", "")
                             placeholderTextColor: "#94A3B8"
                             wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"
@@ -628,7 +691,7 @@ Item {
                             id: warningArea
                             visible: warningEnabled
                             Layout.fillWidth: true; implicitHeight: 64
-                            placeholderText: "Текст ошибки @warning..."
+                            placeholderText: controller.fieldPlaceholder("subsystem", "warningText", "")
                             placeholderTextColor: "#94A3B8"
                             wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14; color: "#111827"

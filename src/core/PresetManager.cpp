@@ -25,21 +25,65 @@ bool PresetManager::load(const QString& presetsFilePath)
         const QJsonArray checks = obj.value(QLatin1String("defaultChecks")).toArray();
         for (const QJsonValue& c : checks)
             preset.defaultChecks << c.toString();
+        preset.defaultController  = obj.value(QLatin1String("defaultController")).toString();
+        preset.defaultInterfaces = obj.value(QLatin1String("defaultInterfaces")).toString();
+        preset.defaultDriver      = obj.value(QLatin1String("defaultDriver")).toString();
         m_subsystems << preset;
     }
 
-    // Load flat lists
     auto toStringList = [](const QJsonArray& arr) {
         QStringList list;
-        for (const QJsonValue& v : arr) list << v.toString();
+        for (const QJsonValue& v : arr)
+            list << v.toString().trimmed();
         return list;
     };
 
-    m_drivers        = toStringList(root.value(QLatin1String("drivers")).toArray());
-    m_interfaces     = toStringList(root.value(QLatin1String("interfaces")).toArray());
+    auto uniqueUnionFromByIcon = [](const QJsonObject& byIcon) {
+        QStringList list;
+        for (auto it = byIcon.begin(); it != byIcon.end(); ++it) {
+            for (const QJsonValue& v : it.value().toArray()) {
+                const QString s = v.toString().trimmed();
+                if (!s.isEmpty() && !list.contains(s))
+                    list << s;
+            }
+        }
+        return list;
+    };
+
     m_osInstallChecks = toStringList(root.value(QLatin1String("osInstallChecks")).toArray());
+    m_defaultOsInstallChecks = toStringList(root.value(QLatin1String("defaultOsInstallChecks")).toArray());
+    if (m_defaultOsInstallChecks.isEmpty())
+        m_defaultOsInstallChecks = m_osInstallChecks;
+
+    const QJsonObject fieldPresets = root.value(QLatin1String("fieldPresets")).toObject();
+    m_driversByIcon    = fieldPresets.value(QLatin1String("drivers")).toObject();
+    m_interfacesByIcon = fieldPresets.value(QLatin1String("interfaces")).toObject();
+    m_drivers          = uniqueUnionFromByIcon(m_driversByIcon);
+    m_interfaces       = uniqueUnionFromByIcon(m_interfacesByIcon);
 
     return true;
+}
+
+QStringList PresetManager::listForIcon(const QJsonObject& byIcon, const QString& icon,
+                                       const QStringList& fallback) const
+{
+    const QJsonArray arr = byIcon.value(icon).toArray();
+    if (arr.isEmpty())
+        return fallback;
+    QStringList list;
+    for (const QJsonValue& v : arr)
+        list << v.toString();
+    return list;
+}
+
+QStringList PresetManager::driversForIcon(const QString& icon) const
+{
+    return listForIcon(m_driversByIcon, icon, m_drivers);
+}
+
+QStringList PresetManager::interfacesForIcon(const QString& icon) const
+{
+    return listForIcon(m_interfacesByIcon, icon, m_interfaces);
 }
 
 QStringList PresetManager::subsystemNames() const
@@ -67,19 +111,24 @@ QString PresetManager::iconForSubsystem(const QString& subsystemName) const
 QStringList PresetManager::drivers() const { return m_drivers; }
 QStringList PresetManager::interfaces() const { return m_interfaces; }
 QStringList PresetManager::osInstallChecks() const { return m_osInstallChecks; }
+QStringList PresetManager::defaultOsInstallChecks() const { return m_defaultOsInstallChecks; }
 
-QStringList PresetManager::checksForSubsystem(const QString& subsystemName) const
+SubsystemPreset PresetManager::presetForSubsystem(const QString& subsystemName) const
 {
     const QString target = subsystemName.toLower().trimmed();
     for (const auto& p : m_subsystems) {
         if (p.name.toLower().trimmed() == target)
-            return p.defaultChecks;
-        // Also match plain name (without \n)
+            return p;
         QString plain = p.name;
         plain.replace(QStringLiteral(" \\n "), QStringLiteral(" "));
         plain.replace(QStringLiteral("\\n"), QStringLiteral(" "));
         if (plain.toLower().trimmed() == target)
-            return p.defaultChecks;
+            return p;
     }
     return {};
+}
+
+QStringList PresetManager::checksForSubsystem(const QString& subsystemName) const
+{
+    return presetForSubsystem(subsystemName).defaultChecks;
 }

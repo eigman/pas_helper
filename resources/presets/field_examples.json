@@ -1,0 +1,229 @@
+{
+  "device": {
+    "pageTitle": {
+      "placeholder": "напр. ПК KVADRA TAU",
+      "examples": [
+        "Персональная электронная вычислительная машина Fastwel CPC505",
+        "Аппаратная платформа BM93P-2",
+        "Вычислительный комплекс ВК-341-09",
+        "Промышленный компьютер Advantix ER-8100 MF"
+      ]
+    },
+    "model": {
+      "placeholder": "напр. KVADRA TAU",
+      "examples": [
+        "CPC505",
+        "BM93P-2",
+        "ВК-341-09",
+        "ER-8100 MF"
+      ]
+    },
+    "serial": {
+      "placeholder": "напр. 0310230010",
+      "examples": [
+        "0310230010",
+        "DE20J007-5368"
+      ]
+    },
+    "motherboard": {
+      "placeholder": "напр. KVADRA B760",
+      "examples": [
+        "B680ZA-I210 mini-ITX",
+        "Fastwel CPC505",
+        "Granit-VT BM93P-2"
+      ]
+    },
+    "bios": {
+      "placeholder": "напр. KVADRA UEFI BIOS Firmware v1.3.1",
+      "examples": [
+        "AMI BIOS V680M16L03 06.17.2024",
+        "Aptio Setup - AMI 2.20.1275",
+        "American Megatrends 5.13"
+      ]
+    },
+    "processor": {
+      "placeholder": "напр. Intel Core i5-13400 2.5 GHz",
+      "examples": [
+        "Intel Atom E3940 1.6 GHz",
+        "Intel Xeon E-2276G 3.8 GHz",
+        "Intel Core i7-8700T 2.4GHz"
+      ]
+    },
+    "chipset": {
+      "placeholder": "напр. Intel B760",
+      "examples": [
+        "Intel C246",
+        "SOC",
+        "Q370"
+      ]
+    },
+    "ram": {
+      "placeholder": "напр. DDR4 16384 MB",
+      "examples": [
+        "DDR4 16384 MB",
+        "DDR2 8192 MB"
+      ]
+    },
+    "osTestNote": {
+      "placeholder": "напр. Установка с USB Flash",
+      "examples": [
+        "Установка с USB Flash",
+        "Ручная установка"
+      ]
+    }
+  },
+  "subsystem": {
+    "byIcon": {
+      "disk": {
+        "controller": {
+          "placeholder": "напр. Raptor Lake SATA AHCI Controller [8086:7a62]",
+          "examples": [
+            "RTS5765DL NVMe SSD Controller (DRAM-less) [10ec:5765]",
+            "Cannon Lake Mobile PCH SATA AHCI Controller [8086:a353]",
+            "Raptor Lake SATA AHCI Controller [8086:7a62]"
+          ]
+        },
+        "interfaces": {
+          "placeholder": "напр. Serial ATA"
+        },
+        "driver": {
+          "placeholder": "напр. devb-ahci"
+        },
+        "testNote": {
+          "examples": [
+            "Медленное чтение/запись диска"
+          ]
+        }
+      },
+      "monitor": {
+        "controller": {
+          "placeholder": "напр. Intel UHD Graphics 630 [8086:3e98]",
+          "examples": [
+            "Alder Lake-S GT1 [UHD Graphics 730] [8086:4692]",
+            "CoffeeLake-S GT2 (UHD Graphics 630) [8086:3e92]",
+            "HD Graphics 500 [8086:5a85]"
+          ]
+        },
+        "interfaces": {
+          "placeholder": "напр. 1x HDMI, 1x VGA"
+        },
+        "driver": {
+          "placeholder": "напр. devg-flat.so"
+        },
+        "testNote": {
+          "examples": [
+            "Запуск в режиме 800х600"
+          ]
+        }
+      },
+      "network": {
+        "controller": {
+          "placeholder": "напр. Intel Ethernet Controller I225-V [8086:15f3]",
+          "examples": [
+            "Intel Ethernet Controller I225-V [8086:15f3]",
+            "RTL8125 2.5GbE Controller [10ec:8125]",
+            "I210 Gigabit Network Connection [8086:157b]"
+          ]
+        },
+        "interfaces": {
+          "placeholder": "напр. 1x Ethernet"
+        },
+        "driver": {
+          "placeholder": "напр. devnp-e1000e.so"
+        },
+        "testNote": {
+          "examples": [
+            "Один из интерфейсов 2.5Gb Ethernet неработоспособен"
+          ]
+        }
+      },
+      "usb": {
+        "controller": {
+          "placeholder": "напр. Intel USB 3.2 xHCI Controller [8086:7a60]",
+          "examples": [
+            "Sunrise Point-LP USB 3.0 xHCI Controller [8086:9d2f]",
+            "Celeron N3350/Pentium N4200/Atom E3900 Series USB xHCI [8086:5aa8]",
+            "Alder Lake-S PCH USB 3.2 Gen 2x2 XHCI Controller [8086:7ae0]"
+          ]
+        },
+        "interfaces": {
+          "placeholder": "напр. 4x USB 3.0"
+        },
+        "driver": {
+          "placeholder": "напр. devu-xhci.so"
+        },
+        "testNote": {
+          "examples": [
+            "Накопители версии 3.0 определяются",
+            "Накопители версии 3.0 интерфейсах USB 3.2 не определяются"
+          ]
+        }
+      },
+      "keyboard": {},
+      "audio": {
+        "controller": {
+          "placeholder": "напр. Intel High Definition Audio Controller [8086:7a50]",
+          "examples": [
+            "Alder Lake-S HD Audio Controller [8086:7ad0]",
+            "Sunrise Point-LP HD Audio [8086:9d71]"
+          ]
+        },
+        "interfaces": {
+          "placeholder": "напр. Audio in, 2x Out"
+        },
+        "driver": {
+          "placeholder": "напр. deva-ctrl-intel_hda.so deva-mixer-hda.so"
+        },
+        "testNote": {
+          "examples": [
+            "Не работают порты 3.5 на лицевой панели"
+          ]
+        }
+      },
+      "serial": {
+        "controller": {
+          "placeholder": "напр. Alder Lake-S PCH Serial IO UART [8086:7aa8]",
+          "examples": [
+            "16550 UART Controller [8086:7a0e]",
+            "Cannon Lake PCH Serial IO UART Host Controller [8086:a328]"
+          ]
+        },
+        "interfaces": {
+          "placeholder": "напр. 4x RS-232"
+        },
+        "driver": {
+          "placeholder": "напр. devc-ser8250"
+        },
+        "testNote": {
+          "examples": [
+            "Порты определяются, передача не происходит",
+            "При подключении к одному из портов система перестает загружаться"
+          ]
+        }
+      }
+    },
+    "defaults": {
+      "hintText": {
+        "placeholder": "Текст замечания…",
+        "examples": [
+          "Порт для вывода DP — dp-b, для вывода DVI-I — dvi-d",
+          "Флеш накопители версии 3.0 интерфейсах USB 3.0 не определяются"
+        ]
+      },
+      "cautionText": {
+        "placeholder": "Текст предупреждения…",
+        "examples": [
+          "Для работы использовалось разрешение 800х600",
+          "Интерфейсы IN и OUT на передней панели не работают",
+          "Работа в разрешении 1920х1080 возможна только после входа в BIOS при каждом запуске"
+        ]
+      },
+      "warningText": {
+        "placeholder": "Текст ошибки…",
+        "examples": [
+          "При подключении к COM порту наблюдалось короткое замыкание"
+        ]
+      }
+    }
+  }
+}

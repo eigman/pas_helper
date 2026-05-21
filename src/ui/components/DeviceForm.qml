@@ -49,18 +49,21 @@ Item {
 
                 Repeater {
                     model: [
-                        { label: "Название устройства", placeholder: "напр. ПК KVADRA TAU",               prop: "devicePageTitle"   },
-                        { label: "Модель",              placeholder: "напр. KVADRA TAU",                   prop: "deviceModel"       },
-                        { label: "Серийный / Заводской номер", placeholder: "напр. 0310230010",            prop: "deviceSerial"      },
-                        { label: "Материнская плата",   placeholder: "напр. KVADRA B760",                  prop: "deviceMotherboard" },
-                        { label: "Тип BIOS (версия)",   placeholder: "напр. KVADRA UEFI BIOS Firmware v1.3.1", prop: "deviceBios"   },
-                        { label: "Процессор",           placeholder: "напр. Intel Core i5-13400 2.5 GHz",  prop: "deviceProcessor"   },
-                        { label: "Чипсет",              placeholder: "напр. Intel B760",                   prop: "deviceChipset"     }
+                        { label: "Название устройства", key: "pageTitle",    prop: "devicePageTitle",   help: true },
+                        { label: "Модель",              key: "model",        prop: "deviceModel",       help: true },
+                        { label: "Серийный / Заводской номер", key: "serial", prop: "deviceSerial",      help: false },
+                        { label: "Материнская плата",   key: "motherboard",  prop: "deviceMotherboard", help: true },
+                        { label: "Тип BIOS (версия)",   key: "bios",         prop: "deviceBios",        help: true },
+                        { label: "Процессор",           key: "processor",    prop: "deviceProcessor",   help: true },
+                        { label: "Чипсет",              key: "chipset",      prop: "deviceChipset",     help: true }
                     ]
                     delegate: DeviceFieldCard {
                         Layout.fillWidth: true
                         fieldLabel: modelData.label
-                        fieldPlaceholder: modelData.placeholder
+                        fieldPlaceholder: controller.fieldPlaceholder("device", modelData.key)
+                        fieldHelpExamples: modelData.help
+                            ? controller.fieldExamples("device", modelData.key)
+                            : []
                         fieldValue: controller[modelData.prop]
                         onFieldChanged: function(v) { controller[modelData.prop] = v }
                     }
@@ -79,7 +82,11 @@ Item {
                         anchors.top: parent.top; anchors.margins: 16
                         spacing: 8
 
-                        Label { text: "ОЗУ"; font.pixelSize: 13; color: "#6B7280" }
+                        Label {
+                            text: "ОЗУ"
+                            font.pixelSize: 13
+                            color: "#6B7280"
+                        }
 
                         RowLayout {
                             Layout.fillWidth: true; spacing: 8
@@ -88,7 +95,7 @@ Item {
                                 id: ramField
                                 Layout.fillWidth: true
                                 text: controller.deviceRam
-                                placeholderText: "напр. DDR4 16384 MB"
+                                placeholderText: controller.fieldPlaceholder("device", "ram")
                                 placeholderTextColor: "#94A3B8"
                                 font.pixelSize: 14; color: "#111827"
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
@@ -188,10 +195,10 @@ Item {
                         anchors.margins: 16
                         spacing: 8
 
-                        Label {
-                            text: "Примечание"
-                            font.pixelSize: 13
-                            color: "#6B7280"
+                        FieldLabelRow {
+                            Layout.fillWidth: true
+                            labelText: "Примечание"
+                            helpExamples: controller.fieldExamples("device", "osTestNote")
                         }
 
                         Bctl.TextArea {
@@ -199,7 +206,7 @@ Item {
                             Layout.fillWidth: true
                             implicitHeight: 72
                             text: controller.osTestNote
-                            placeholderText: "напр. Установка с USB Flash"
+                            placeholderText: controller.fieldPlaceholder("device", "osTestNote")
                             placeholderTextColor: "#94A3B8"
                             wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
                             font.pixelSize: 14

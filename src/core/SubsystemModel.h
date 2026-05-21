@@ -21,6 +21,9 @@ public:
         HintTextRole,
         CautionTextRole,
         WarningTextRole,
+        HintActiveRole,
+        CautionActiveRole,
+        WarningActiveRole,
         IconRole,
         IsCompleteRole,   // bool: name + controller + driver all filled
     };

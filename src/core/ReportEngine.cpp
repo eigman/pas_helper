@@ -1,4 +1,5 @@
 #include "ReportEngine.h"
+#include "RecommendationsConverter.h"
 #include <QTextStream>
 
 QString ReportEngine::generate(const ReportData& data)
@@ -126,9 +127,14 @@ QString ReportEngine::generateRecommendationsGroup(const ReportData& data)
     QTextStream s(&out);
 
     s << "@group recomendations\n\n";
-    if (!data.recommendations.isEmpty()) {
-        s << data.recommendations;
-        if (!data.recommendations.endsWith(QLatin1Char('\n'))) {
+    QString recBody = data.recommendations;
+    if (!data.recommendationsJson.isEmpty()) {
+        const QVariantList blocks = RecommendationsConverter::jsonToBlocks(data.recommendationsJson);
+        recBody = RecommendationsConverter::blocksToMarkup(blocks);
+    }
+    if (!recBody.isEmpty()) {
+        s << recBody;
+        if (!recBody.endsWith(QLatin1Char('\n'))) {
             s << "\n";
         }
     }

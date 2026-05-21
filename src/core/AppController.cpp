@@ -2,6 +2,7 @@
 #include "ReportEngine.h"
 #include "ReportParser.h"
 #include "Storage.h"
+#include "RecommendationsConverter.h"
 
 #include <QDir>
 #include <QTimer>
@@ -27,10 +28,22 @@ void AppController::initialize(const QString& binaryDir)
         emit errorOccurred(QStringLiteral("Не удалось загрузить пресеты из ") + presetsPath);
     }
 
+    const QString examplesPath = QDir(binaryDir).filePath(
+        QStringLiteral("resources/presets/field_examples.json"));
+    if (!m_examples.load(examplesPath)) {
+        emit errorOccurred(QStringLiteral("Не удалось загрузить примеры из ") + examplesPath);
+    }
+
     // Add all preset subsystems by default
     for (const QString& name : m_presets.subsystemNames())
         addSubsystem(name);
+
+    m_data.osInstall.checkItems.clear();
+    for (const QString& text : m_presets.defaultOsInstallChecks())
+        m_data.osInstall.checkItems << CheckItem{ text };
+
     setModified(false); // fresh state, not dirty
+    emit osInstallChanged();
 
     // Load pci.ids
     m_pciAnalyzer.loadPciIds(binaryDir);
@@ -147,12 +160,17 @@ void AppController::addSubsystem(const QString& name)
     }
 
     m_subsystemModel->insertSubsystem(insertAt, name);
-    // Apply default checks and icon from presets
-    const QStringList checks = m_presets.checksForSubsystem(name);
-    if (!checks.isEmpty())
-        m_subsystemModel->setCheckItems(insertAt, checks);
-    const QString icon = m_presets.iconForSubsystem(name);
-    m_subsystemModel->setField(insertAt, QStringLiteral("icon"), icon);
+    const SubsystemPreset preset = m_presets.presetForSubsystem(name);
+    if (!preset.defaultChecks.isEmpty())
+        m_subsystemModel->setCheckItems(insertAt, preset.defaultChecks);
+    if (!preset.icon.isEmpty())
+        m_subsystemModel->setField(insertAt, QStringLiteral("icon"), preset.icon);
+    if (!preset.defaultController.isEmpty())
+        m_subsystemModel->setField(insertAt, QStringLiteral("controller"), preset.defaultController);
+    if (!preset.defaultInterfaces.isEmpty())
+        m_subsystemModel->setField(insertAt, QStringLiteral("interfaces"), preset.defaultInterfaces);
+    if (!preset.defaultDriver.isEmpty())
+        m_subsystemModel->setField(insertAt, QStringLiteral("driver"), preset.defaultDriver);
 }
 
 void AppController::removeSubsystem(int index)
@@ -209,8 +227,42 @@ void AppController::setOsCheckItem(int index, const QString& text)
 
 QStringList AppController::subsystemNamePresets() const { return m_presets.subsystemNames(); }
 QString     AppController::iconForSubsystem(const QString& name) const { return m_presets.iconForSubsystem(name); }
-QStringList AppController::driverPresets()        const { return m_presets.drivers(); }
-QStringList AppController::interfacePresets()     const { return m_presets.interfaces(); }
+QStringList AppController::driverPresets() const { return m_presets.drivers(); }
+QStringList AppController::interfacePresets() const { return m_presets.interfaces(); }
+
+QStringList AppController::driverPresetsForSubsystem(int subsystemIndex) const
+{
+    if (subsystemIndex < 0 || subsystemIndex >= m_subsystemModel->rowCount())
+        return m_presets.drivers();
+    const auto subs = m_subsystemModel->subsystems();
+    const QString icon = subs.at(subsystemIndex).icon.isEmpty()
+                             ? m_presets.iconForSubsystem(subs.at(subsystemIndex).name)
+                             : subs.at(subsystemIndex).icon;
+    return m_presets.driversForIcon(icon);
+}
+
+QStringList AppController::interfacePresetsForSubsystem(int subsystemIndex) const
+{
+    if (subsystemIndex < 0 || subsystemIndex >= m_subsystemModel->rowCount())
+        return m_presets.interfaces();
+    const auto subs = m_subsystemModel->subsystems();
+    const QString icon = subs.at(subsystemIndex).icon.isEmpty()
+                             ? m_presets.iconForSubsystem(subs.at(subsystemIndex).name)
+                             : subs.at(subsystemIndex).icon;
+    return m_presets.interfacesForIcon(icon);
+}
+
+QString AppController::fieldPlaceholder(const QString& scope, const QString& fieldKey,
+                                        const QString& contextKey) const
+{
+    return m_examples.placeholder(scope, fieldKey, contextKey);
+}
+
+QStringList AppController::fieldExamples(const QString& scope, const QString& fieldKey,
+                                         const QString& contextKey) const
+{
+    return m_examples.examples(scope, fieldKey, contextKey);
+}
 QStringList AppController::osInstallChecksPresets() const { return m_presets.osInstallChecks(); }
 
 QStringList AppController::checksPresets(const QString& subsystemName) const
@@ -220,7 +272,9 @@ QStringList AppController::checksPresets(const QString& subsystemName) const
 
 QStringList AppController::testResultOptions() const
 {
-    return { QStringLiteral("успешно"), QStringLiteral("неуспешно"), QStringLiteral("частично") };
+    return { QStringLiteral("Успешно"),
+             QStringLiteral("Условно успешно"),
+             QStringLiteral("Неуспешно") };
 }
 
 // ── Property helpers ─────────────────────────────────────────────────────────
@@ -285,12 +339,24 @@ SET_OS(WarningText, warningText)
 
 #undef SET_OS
 
-void AppController::setRecommendations(const QString& v)
+QString AppController::recommendationsText() const
 {
-    if (m_data.recommendations == v) return;
-    m_data.recommendations = v;
+    return RecommendationsConverter::blocksToPlainText(m_recommendationBlocks);
+}
+
+void AppController::setRecommendationBlocks(const QVariantList& blocks)
+{
+    m_recommendationBlocks = blocks;
+    m_data.recommendationsJson = RecommendationsConverter::blocksToJson(blocks);
+    m_data.recommendations = RecommendationsConverter::blocksToMarkup(blocks);
     setModified(true);
-    emit recommendationsChanged();
+    emit recommendationBlocksChanged();
+    emit recommendationsTextChanged();
+}
+
+void AppController::setRecommendationsText(const QString& v)
+{
+    setRecommendationBlocks(RecommendationsConverter::plainTextToBlocks(v));
 }
 
 void AppController::setWorkNotes(const QString& v)
@@ -313,19 +379,36 @@ void AppController::setModified(bool v)
 void AppController::loadReportDataIntoModels(const ReportData& data)
 {
     m_data = data;
-    // Populate icon from presets before loading into model
     QList<SubsystemEntry> subsystems = data.subsystems;
-    for (auto& sub : subsystems)
+    for (auto& sub : subsystems) {
         sub.icon = m_presets.iconForSubsystem(sub.name);
+        if (!sub.hintText.isEmpty() && !sub.hintActive)
+            sub.hintActive = true;
+        if (!sub.cautionText.isEmpty() && !sub.cautionActive)
+            sub.cautionActive = true;
+        if (!sub.warningText.isEmpty() && !sub.warningActive)
+            sub.warningActive = true;
+    }
     m_subsystemModel->setSubsystems(subsystems);
+
+    if (!m_data.recommendationsJson.isEmpty())
+        m_recommendationBlocks = RecommendationsConverter::jsonToBlocks(m_data.recommendationsJson);
+    else if (!m_data.recommendations.isEmpty())
+        m_recommendationBlocks = RecommendationsConverter::markupToBlocks(m_data.recommendations);
+    else
+        m_recommendationBlocks.clear();
+
     emit deviceChanged();
     emit osInstallChanged();
-    emit recommendationsChanged();
+    emit recommendationBlocksChanged();
+    emit recommendationsTextChanged();
 }
 
 ReportData AppController::collectReportDataFromModels() const
 {
     ReportData data = m_data;
     data.subsystems = m_subsystemModel->subsystems();
+    data.recommendationsJson = RecommendationsConverter::blocksToJson(m_recommendationBlocks);
+    data.recommendations = RecommendationsConverter::blocksToMarkup(m_recommendationBlocks);
     return data;
 }

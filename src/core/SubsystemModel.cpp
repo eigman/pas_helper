@@ -30,6 +30,9 @@ QVariant SubsystemModel::data(const QModelIndex& index, int role) const
     case HintTextRole:    return e.hintText;
     case CautionTextRole: return e.cautionText;
     case WarningTextRole: return e.warningText;
+    case HintActiveRole:    return e.hintActive;
+    case CautionActiveRole: return e.cautionActive;
+    case WarningActiveRole: return e.warningActive;
     case IconRole:        return e.icon;
     case IsCompleteRole:  return !e.name.isEmpty() && !e.driver.isEmpty();
     default: return {};
@@ -51,6 +54,9 @@ bool SubsystemModel::setData(const QModelIndex& index, const QVariant& value, in
     case HintTextRole:    e.hintText    = value.toString(); break;
     case CautionTextRole: e.cautionText = value.toString(); break;
     case WarningTextRole: e.warningText = value.toString(); break;
+    case HintActiveRole:    e.hintActive    = value.toBool(); break;
+    case CautionActiveRole: e.cautionActive = value.toBool(); break;
+    case WarningActiveRole: e.warningActive = value.toBool(); break;
     default: return false;
     }
 
@@ -71,6 +77,9 @@ QHash<int, QByteArray> SubsystemModel::roleNames() const
         { HintTextRole,    "hintText"    },
         { CautionTextRole, "cautionText" },
         { WarningTextRole, "warningText" },
+        { HintActiveRole,    "hintActive"    },
+        { CautionActiveRole, "cautionActive" },
+        { WarningActiveRole, "warningActive" },
         { IconRole,        "icon"        },
         { IsCompleteRole,  "isComplete"  },
     };
@@ -96,7 +105,7 @@ void SubsystemModel::insertSubsystem(int row, const QString& name)
 
     SubsystemEntry e;
     e.name = name;
-    e.testResult = QStringLiteral("успешно");
+    e.testResult = QStringLiteral("Успешно");
     beginInsertRows({}, row, row);
     m_data.insert(row, e);
     endInsertRows();
@@ -127,6 +136,9 @@ void SubsystemModel::setField(int index, const QString& field, const QVariant& v
     else if (field == QLatin1String("hintText"))    { e.hintText    = value.toString(); changed = true; }
     else if (field == QLatin1String("cautionText")) { e.cautionText = value.toString(); changed = true; }
     else if (field == QLatin1String("warningText")) { e.warningText = value.toString(); changed = true; }
+    else if (field == QLatin1String("hintActive"))    { e.hintActive    = value.toBool(); changed = true; }
+    else if (field == QLatin1String("cautionActive")) { e.cautionActive = value.toBool(); changed = true; }
+    else if (field == QLatin1String("warningActive")) { e.warningActive = value.toBool(); changed = true; }
     else if (field == QLatin1String("icon"))        { e.icon        = value.toString(); changed = true; }
 
     if (changed) notifyRow(index);
@@ -177,6 +189,10 @@ QVariantMap SubsystemModel::getSubsystem(int index) const
         { QStringLiteral("hintText"),    e.hintText    },
         { QStringLiteral("cautionText"), e.cautionText },
         { QStringLiteral("warningText"), e.warningText },
+        { QStringLiteral("hintActive"),    e.hintActive    },
+        { QStringLiteral("cautionActive"), e.cautionActive },
+        { QStringLiteral("warningActive"), e.warningActive },
+        { QStringLiteral("icon"),          e.icon          },
     };
 }
 

@@ -1,12 +1,12 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Three-option result toggle: успешно / неуспешно / частично
+// Three-option result toggle: Успешно / Условно успешно / Неуспешно
 // Matches the pill-style selector from the design screenshots
 RowLayout {
     id: root
 
-    property string currentValue: "успешно"
+    property string currentValue: "Успешно"
 
     signal valueChanged(string value)
 
@@ -14,9 +14,9 @@ RowLayout {
 
     Repeater {
         model: [
-            { value: "успешно",   label: "Успешно",       activeColor: "#16A34A", activeBg: "#F0FDF4", activeBorder: "#16A34A" },
-            { value: "неуспешно", label: "Провалено",     activeColor: "#DC2626", activeBg: "#FEF2F2", activeBorder: "#DC2626" },
-            { value: "частично",  label: "Предупреждение", activeColor: "#D97706", activeBg: "#FFFBEB", activeBorder: "#D97706" }
+            { value: "Успешно",           label: "Успешно",           activeColor: "#16A34A", activeBg: "#F0FDF4", activeBorder: "#16A34A" },
+            { value: "Условно успешно",   label: "Условно успешно",   activeColor: "#D97706", activeBg: "#FFFBEB", activeBorder: "#D97706" },
+            { value: "Неуспешно",         label: "Неуспешно",         activeColor: "#DC2626", activeBg: "#FEF2F2", activeBorder: "#DC2626" }
         ]
 
         delegate: Rectangle {

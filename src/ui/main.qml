@@ -10,10 +10,31 @@ ApplicationWindow {
     visible: true
     width: 1280
     height: 800
-    minimumWidth: 800
-    minimumHeight: 560
+    minimumWidth: 640
+    minimumHeight: 480
     title: controller.windowTitle + " — Report Assistant"
     flags: Qt.Window | Qt.FramelessWindowHint
+
+    // Remembered size/position for restore after maximize (frameless window).
+    property rect windowedGeometry: Qt.rect(x, y, width, height)
+
+    function toggleMaximized() {
+        if (visibility === Window.Maximized) {
+            showNormal()
+            x = windowedGeometry.x
+            y = windowedGeometry.y
+            width = windowedGeometry.width
+            height = windowedGeometry.height
+        } else {
+            windowedGeometry = Qt.rect(x, y, width, height)
+            showMaximized()
+        }
+    }
+
+    function rememberWindowedGeometry() {
+        if (visibility === Window.Windowed)
+            windowedGeometry = Qt.rect(x, y, width, height)
+    }
 
     Material.theme: Material.Light
     Material.accent: Material.Blue
@@ -50,11 +71,8 @@ ApplicationWindow {
                         root.y += mouseY - root.dragOrigin.y
                     }
                 }
-                onDoubleClicked: {
-                    root.visibility === Window.Maximized
-                        ? root.showNormal()
-                        : root.showMaximized()
-                }
+                onReleased: root.rememberWindowedGeometry()
+                onDoubleClicked: root.toggleMaximized()
             }
 
             RowLayout {
@@ -179,7 +197,7 @@ ApplicationWindow {
                                 onClicked: {
                                     if (modelData.action === "minimize") root.showMinimized()
                                     else if (modelData.action === "maximize")
-                                        root.visibility === Window.Maximized ? root.showNormal() : root.showMaximized()
+                                        root.toggleMaximized()
                                     else Qt.quit()
                                 }
                             }
@@ -397,7 +415,7 @@ ApplicationWindow {
         }
     }
 
-    // Frameless window: OS resize frame is absent — thin hit-targets on edges and corner.
+    // Frameless window: OS resize frame is absent — hit-targets on all edges and corners.
     Item {
         id: resizeEdges
         anchors.fill: parent
@@ -405,51 +423,125 @@ ApplicationWindow {
         visible: root.visibility !== Window.FullScreen
 
         readonly property bool allowResize: root.visibility === Window.Windowed
+        readonly property int grip: 8
+        readonly property int cornerGrip: 14
 
+        function globalPos(area, mouse) {
+            return area.mapToGlobal(mouse.x, mouse.y)
+        }
+
+        // Right
         MouseArea {
             anchors.right: parent.right
-            width: 10
+            width: resizeEdges.grip
             anchors.top: parent.top
-            anchors.topMargin: 44
             anchors.bottom: parent.bottom
             enabled: resizeEdges.allowResize
             hoverEnabled: true
             cursorShape: Qt.SizeHorCursor
             property real _startWidth: 0
-            property real _startGlobalX: 0
+            property real _startGX: 0
             onPressed: function(mouse) {
+                const g = resizeEdges.globalPos(this, mouse)
                 _startWidth = root.width
-                _startGlobalX = mouse.globalX
+                _startGX = g.x
             }
             onPositionChanged: function(mouse) {
                 if (!pressed) return
-                root.width = Math.max(root.minimumWidth, _startWidth + (mouse.globalX - _startGlobalX))
+                const g = resizeEdges.globalPos(this, mouse)
+                root.width = Math.max(root.minimumWidth, _startWidth + (g.x - _startGX))
             }
+            onReleased: root.rememberWindowedGeometry()
         }
+
+        // Left
+        MouseArea {
+            anchors.left: parent.left
+            width: resizeEdges.grip
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            enabled: resizeEdges.allowResize
+            hoverEnabled: true
+            cursorShape: Qt.SizeHorCursor
+            property real _startWidth: 0
+            property real _startX: 0
+            property real _startGX: 0
+            onPressed: function(mouse) {
+                const g = resizeEdges.globalPos(this, mouse)
+                _startWidth = root.width
+                _startX = root.x
+                _startGX = g.x
+            }
+            onPositionChanged: function(mouse) {
+                if (!pressed) return
+                const g = resizeEdges.globalPos(this, mouse)
+                const dx = g.x - _startGX
+                const newW = Math.max(root.minimumWidth, _startWidth - dx)
+                root.x = _startX + (_startWidth - newW)
+                root.width = newW
+            }
+            onReleased: root.rememberWindowedGeometry()
+        }
+
+        // Bottom
         MouseArea {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            height: 10
+            height: resizeEdges.grip
             enabled: resizeEdges.allowResize
             hoverEnabled: true
             cursorShape: Qt.SizeVerCursor
             property real _startHeight: 0
-            property real _startGlobalY: 0
+            property real _startGY: 0
             onPressed: function(mouse) {
+                const g = resizeEdges.globalPos(this, mouse)
                 _startHeight = root.height
-                _startGlobalY = mouse.globalY
+                _startGY = g.y
             }
             onPositionChanged: function(mouse) {
                 if (!pressed) return
-                root.height = Math.max(root.minimumHeight, _startHeight + (mouse.globalY - _startGlobalY))
+                const g = resizeEdges.globalPos(this, mouse)
+                root.height = Math.max(root.minimumHeight, _startHeight + (g.y - _startGY))
             }
+            onReleased: root.rememberWindowedGeometry()
         }
+
+        // Top (thin strip; titlebar drag uses the area below)
+        MouseArea {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            height: resizeEdges.grip
+            enabled: resizeEdges.allowResize
+            hoverEnabled: true
+            cursorShape: Qt.SizeVerCursor
+            property real _startHeight: 0
+            property real _startY: 0
+            property real _startGY: 0
+            onPressed: function(mouse) {
+                const g = resizeEdges.globalPos(this, mouse)
+                _startHeight = root.height
+                _startY = root.y
+                _startGY = g.y
+            }
+            onPositionChanged: function(mouse) {
+                if (!pressed) return
+                const g = resizeEdges.globalPos(this, mouse)
+                const dy = g.y - _startGY
+                const newH = Math.max(root.minimumHeight, _startHeight - dy)
+                root.y = _startY + (_startHeight - newH)
+                root.height = newH
+            }
+            onReleased: root.rememberWindowedGeometry()
+        }
+
+        // Bottom-right
         MouseArea {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            width: 14
-            height: 14
+            width: resizeEdges.cornerGrip
+            height: resizeEdges.cornerGrip
             enabled: resizeEdges.allowResize
             hoverEnabled: true
             cursorShape: Qt.SizeFDiagCursor
@@ -458,16 +550,126 @@ ApplicationWindow {
             property real _startGX: 0
             property real _startGY: 0
             onPressed: function(mouse) {
+                const g = resizeEdges.globalPos(this, mouse)
                 _startW = root.width
                 _startH = root.height
-                _startGX = mouse.globalX
-                _startGY = mouse.globalY
+                _startGX = g.x
+                _startGY = g.y
             }
             onPositionChanged: function(mouse) {
                 if (!pressed) return
-                root.width = Math.max(root.minimumWidth, _startW + (mouse.globalX - _startGX))
-                root.height = Math.max(root.minimumHeight, _startH + (mouse.globalY - _startGY))
+                const g = resizeEdges.globalPos(this, mouse)
+                root.width = Math.max(root.minimumWidth, _startW + (g.x - _startGX))
+                root.height = Math.max(root.minimumHeight, _startH + (g.y - _startGY))
             }
+            onReleased: root.rememberWindowedGeometry()
+        }
+
+        // Bottom-left
+        MouseArea {
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            width: resizeEdges.cornerGrip
+            height: resizeEdges.cornerGrip
+            enabled: resizeEdges.allowResize
+            hoverEnabled: true
+            cursorShape: Qt.SizeBDiagCursor
+            property real _startW: 0
+            property real _startH: 0
+            property real _startX: 0
+            property real _startGX: 0
+            property real _startGY: 0
+            onPressed: function(mouse) {
+                const g = resizeEdges.globalPos(this, mouse)
+                _startW = root.width
+                _startH = root.height
+                _startX = root.x
+                _startGX = g.x
+                _startGY = g.y
+            }
+            onPositionChanged: function(mouse) {
+                if (!pressed) return
+                const g = resizeEdges.globalPos(this, mouse)
+                const dx = g.x - _startGX
+                const newW = Math.max(root.minimumWidth, _startW - dx)
+                root.x = _startX + (_startW - newW)
+                root.width = newW
+                root.height = Math.max(root.minimumHeight, _startH + (g.y - _startGY))
+            }
+            onReleased: root.rememberWindowedGeometry()
+        }
+
+        // Top-right
+        MouseArea {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            width: resizeEdges.cornerGrip
+            height: resizeEdges.cornerGrip
+            enabled: resizeEdges.allowResize
+            hoverEnabled: true
+            cursorShape: Qt.SizeBDiagCursor
+            property real _startW: 0
+            property real _startH: 0
+            property real _startY: 0
+            property real _startGX: 0
+            property real _startGY: 0
+            onPressed: function(mouse) {
+                const g = resizeEdges.globalPos(this, mouse)
+                _startW = root.width
+                _startH = root.height
+                _startY = root.y
+                _startGX = g.x
+                _startGY = g.y
+            }
+            onPositionChanged: function(mouse) {
+                if (!pressed) return
+                const g = resizeEdges.globalPos(this, mouse)
+                root.width = Math.max(root.minimumWidth, _startW + (g.x - _startGX))
+                const dy = g.y - _startGY
+                const newH = Math.max(root.minimumHeight, _startH - dy)
+                root.y = _startY + (_startH - newH)
+                root.height = newH
+            }
+            onReleased: root.rememberWindowedGeometry()
+        }
+
+        // Top-left
+        MouseArea {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            width: resizeEdges.cornerGrip
+            height: resizeEdges.cornerGrip
+            enabled: resizeEdges.allowResize
+            hoverEnabled: true
+            cursorShape: Qt.SizeFDiagCursor
+            property real _startW: 0
+            property real _startH: 0
+            property real _startX: 0
+            property real _startY: 0
+            property real _startGX: 0
+            property real _startGY: 0
+            onPressed: function(mouse) {
+                const g = resizeEdges.globalPos(this, mouse)
+                _startW = root.width
+                _startH = root.height
+                _startX = root.x
+                _startY = root.y
+                _startGX = g.x
+                _startGY = g.y
+            }
+            onPositionChanged: function(mouse) {
+                if (!pressed) return
+                const g = resizeEdges.globalPos(this, mouse)
+                const dx = g.x - _startGX
+                const dy = g.y - _startGY
+                const newW = Math.max(root.minimumWidth, _startW - dx)
+                const newH = Math.max(root.minimumHeight, _startH - dy)
+                root.x = _startX + (_startW - newW)
+                root.y = _startY + (_startH - newH)
+                root.width = newW
+                root.height = newH
+            }
+            onReleased: root.rememberWindowedGeometry()
         }
     }
 
@@ -545,7 +747,7 @@ ApplicationWindow {
                     enabled: !parent.parent.disabled
                     onClicked: {
                         fileMenuPopup.close()
-                        parent.parent.parent.triggered()
+                        parent.parent.triggered()
                     }
                 }
             }

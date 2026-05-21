@@ -7,6 +7,20 @@
 #include <QJsonArray>
 #include <QTextStream>
 
+namespace {
+QString normalizeTestResult(QString value)
+{
+    value = value.trimmed();
+    if (value == QLatin1String("успешно"))
+        return QStringLiteral("Успешно");
+    if (value == QLatin1String("частично"))
+        return QStringLiteral("Условно успешно");
+    if (value == QLatin1String("неуспешно"))
+        return QStringLiteral("Неуспешно");
+    return value;
+}
+} // namespace
+
 std::optional<QString> Storage::readTextFile(const QString& path)
 {
     QFile file(path);
@@ -105,6 +119,10 @@ QJsonObject Storage::reportDataToJson(const ReportData& data)
         obj[QLatin1String("testNote")]    = e.testNote;
         obj[QLatin1String("hintText")]    = e.hintText;
         obj[QLatin1String("cautionText")] = e.cautionText;
+        obj[QLatin1String("warningText")] = e.warningText;
+        obj[QLatin1String("hintActive")]    = e.hintActive;
+        obj[QLatin1String("cautionActive")] = e.cautionActive;
+        obj[QLatin1String("warningActive")] = e.warningActive;
         QJsonArray checks;
         for (const auto& ci : e.checkItems) checks << ci.text;
         obj[QLatin1String("checkItems")] = checks;
@@ -123,7 +141,8 @@ QJsonObject Storage::reportDataToJson(const ReportData& data)
         subs << obj;
     }
     root[QLatin1String("subsystems")]      = subs;
-    root[QLatin1String("recommendations")] = data.recommendations;
+    root[QLatin1String("recommendations")]     = data.recommendations;
+    root[QLatin1String("recommendationsJson")] = data.recommendationsJson;
 
     return root;
 }
@@ -150,10 +169,15 @@ ReportData Storage::reportDataFromJson(const QJsonObject& root)
     };
 
     const QJsonObject os = root.value(QLatin1String("osInstall")).toObject();
-    data.osInstall.testResult  = os.value(QLatin1String("testResult")).toString(QStringLiteral("успешно"));
+    data.osInstall.testResult  = normalizeTestResult(
+        os.value(QLatin1String("testResult")).toString(QStringLiteral("Успешно")));
     data.osInstall.testNote    = os.value(QLatin1String("testNote")).toString();
     data.osInstall.hintText    = os.value(QLatin1String("hintText")).toString();
     data.osInstall.cautionText = os.value(QLatin1String("cautionText")).toString();
+    data.osInstall.warningText = os.value(QLatin1String("warningText")).toString();
+    data.osInstall.hintActive    = os.value(QLatin1String("hintActive")).toBool(!data.osInstall.hintText.isEmpty());
+    data.osInstall.cautionActive = os.value(QLatin1String("cautionActive")).toBool(!data.osInstall.cautionText.isEmpty());
+    data.osInstall.warningActive = os.value(QLatin1String("warningActive")).toBool(!data.osInstall.warningText.isEmpty());
     data.osInstall.checkItems  = deserializeChecks(os);
 
     const QJsonArray subs = root.value(QLatin1String("subsystems")).toArray();
@@ -164,14 +188,20 @@ ReportData Storage::reportDataFromJson(const QJsonObject& root)
         sub.controller  = obj.value(QLatin1String("controller")).toString();
         sub.interfaces  = obj.value(QLatin1String("interfaces")).toString();
         sub.driver      = obj.value(QLatin1String("driver")).toString();
-        sub.testResult  = obj.value(QLatin1String("testResult")).toString(QStringLiteral("успешно"));
+        sub.testResult  = normalizeTestResult(
+            obj.value(QLatin1String("testResult")).toString(QStringLiteral("Успешно")));
         sub.testNote    = obj.value(QLatin1String("testNote")).toString();
         sub.hintText    = obj.value(QLatin1String("hintText")).toString();
         sub.cautionText = obj.value(QLatin1String("cautionText")).toString();
+        sub.warningText = obj.value(QLatin1String("warningText")).toString();
+        sub.hintActive    = obj.value(QLatin1String("hintActive")).toBool(!sub.hintText.isEmpty());
+        sub.cautionActive = obj.value(QLatin1String("cautionActive")).toBool(!sub.cautionText.isEmpty());
+        sub.warningActive = obj.value(QLatin1String("warningActive")).toBool(!sub.warningText.isEmpty());
         sub.checkItems  = deserializeChecks(obj);
         data.subsystems << sub;
     }
 
-    data.recommendations = root.value(QLatin1String("recommendations")).toString();
+    data.recommendations     = root.value(QLatin1String("recommendations")).toString();
+    data.recommendationsJson = root.value(QLatin1String("recommendationsJson")).toString();
     return data;
 }

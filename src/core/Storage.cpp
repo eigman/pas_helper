@@ -1,4 +1,5 @@
 #include "Storage.h"
+#include "WorkSummaryExporter.h"
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -46,21 +47,18 @@ QString Storage::progressPath(const QString& txtPath)
     return fi.dir().filePath(fi.completeBaseName() + QStringLiteral(".progress.json"));
 }
 
+QString Storage::workSummaryPath(const QString& txtPath)
+{
+    QFileInfo fi(txtPath);
+    return fi.dir().filePath(fi.completeBaseName() + QStringLiteral(".work.md"));
+}
+
 bool Storage::saveProgress(const QString& txtPath, const ProgressData& progress)
 {
     QJsonObject root;
-    root[QLatin1String("version")]    = 1;
+    root[QLatin1String("version")]    = 2;
     root[QLatin1String("reportData")] = reportDataToJson(progress.reportData);
-    root[QLatin1String("workNotes")]  = progress.workNotes;
-
-    QJsonArray workItems;
-    for (const auto& item : progress.workItems) {
-        QJsonObject obj;
-        obj[QLatin1String("text")] = item.text;
-        obj[QLatin1String("done")] = item.done;
-        workItems << obj;
-    }
-    root[QLatin1String("workItems")] = workItems;
+    root[QLatin1String("workProgress")] = workProgressToJson(progress.workProgress, progress.workCurrentIndex);
 
     const QJsonDocument doc(root);
     QFile file(progressPath(txtPath));
@@ -80,18 +78,57 @@ std::optional<ProgressData> Storage::loadProgress(const QString& txtPath)
     const QJsonObject root = doc.object();
     ProgressData progress;
     progress.reportData = reportDataFromJson(root.value(QLatin1String("reportData")).toObject());
-    progress.workNotes  = root.value(QLatin1String("workNotes")).toString();
-
-    const QJsonArray workItems = root.value(QLatin1String("workItems")).toArray();
-    for (const QJsonValue& v : workItems) {
-        const QJsonObject obj = v.toObject();
-        progress.workItems << WorkItem{
-            obj.value(QLatin1String("text")).toString(),
-            obj.value(QLatin1String("done")).toBool()
-        };
-    }
+    progress.workProgress = workProgressFromJson(root);
+    progress.workCurrentIndex = root.value(QLatin1String("workProgress"))
+                                    .toObject()
+                                    .value(QLatin1String("currentIndex"))
+                                    .toInt(0);
 
     return progress;
+}
+
+QJsonObject Storage::workProgressToJson(const WorkProgressData& progress, int currentIndex)
+{
+    QJsonObject obj;
+    obj[QLatin1String("version")]       = 1;
+    obj[QLatin1String("currentIndex")]  = currentIndex;
+    QJsonArray steps;
+    for (const auto& state : progress.states) {
+        QJsonObject s;
+        s[QLatin1String("status")] = state.status;
+        s[QLatin1String("note")]   = state.note;
+        s[QLatin1String("tag")]    = state.tag;
+        steps << s;
+    }
+    obj[QLatin1String("steps")] = steps;
+    return obj;
+}
+
+WorkProgressData Storage::workProgressFromJson(const QJsonObject& root)
+{
+    WorkProgressData data;
+    const QJsonObject wp = root.value(QLatin1String("workProgress")).toObject();
+    if (wp.isEmpty())
+        return data;
+
+    const QJsonArray steps = wp.value(QLatin1String("steps")).toArray();
+    for (const QJsonValue& v : steps) {
+        const QJsonObject obj = v.toObject();
+        data.states << WorkStepState{
+            obj.value(QLatin1String("status")).toString(),
+            obj.value(QLatin1String("note")).toString(),
+            obj.value(QLatin1String("tag")).toString(),
+        };
+    }
+    return data;
+}
+
+bool Storage::writeWorkSummary(const QString& txtPath,
+                               const QList<WorkStepTemplate>& catalog,
+                               const QList<WorkStepState>& states)
+{
+    const QString md = WorkSummaryExporter::toMarkdown(catalog, states);
+    return writeTextFile(workSummaryPath(txtPath), md);
 }
 
 // ── JSON serialization helpers ───────────────────────────────────────────────

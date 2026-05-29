@@ -3,7 +3,9 @@
 #include "ReportData.h"
 #include "SubsystemModel.h"
 #include "PciDeviceModel.h"
-#include "WorkItemModel.h"
+#include "WorkStepModel.h"
+#include "WorkStepsCatalog.h"
+#include "Storage.h"
 #include "PciAnalyzer.h"
 #include "PresetManager.h"
 #include "ExamplesManager.h"
@@ -43,12 +45,13 @@ class AppController : public QObject {
     // ── Models ───────────────────────────────────────────────────────────────
     Q_PROPERTY(SubsystemModel*  subsystemModel READ subsystemModel  CONSTANT)
     Q_PROPERTY(PciDeviceModel*  pciModel       READ pciModel        CONSTANT)
-    Q_PROPERTY(WorkItemModel*   workItemModel  READ workItemModel   CONSTANT)
+    Q_PROPERTY(WorkStepModel*   workStepModel       READ workStepModel       CONSTANT)
+    Q_PROPERTY(int             currentWorkStepIndex READ currentWorkStepIndex WRITE setCurrentWorkStepIndex NOTIFY currentWorkStepIndexChanged)
+    Q_PROPERTY(int             workStepCount        READ workStepCount        NOTIFY workStepCountChanged)
 
-    // ── Recommendations + Work notes ─────────────────────────────────────────
+    // ── Recommendations ──────────────────────────────────────────────────────
     Q_PROPERTY(QVariantList recommendationBlocks READ recommendationBlocks WRITE setRecommendationBlocks NOTIFY recommendationBlocksChanged)
     Q_PROPERTY(QString recommendationsText READ recommendationsText WRITE setRecommendationsText NOTIFY recommendationsTextChanged)
-    Q_PROPERTY(QString workNotes       READ workNotes       WRITE setWorkNotes       NOTIFY workNotesChanged)
 
     // ── PCI status ───────────────────────────────────────────────────────────
     Q_PROPERTY(bool pciIdsLoaded READ pciIdsLoaded NOTIFY pciStatusChanged)
@@ -94,6 +97,11 @@ public:
     Q_INVOKABLE QStringList osInstallChecksPresets() const;
     Q_INVOKABLE QStringList testResultOptions() const;
 
+    // ── Work tab navigation ───────────────────────────────────────────────────
+    Q_INVOKABLE void nextWorkStep();
+    Q_INVOKABLE void prevWorkStep();
+    Q_INVOKABLE void goToWorkStep(int index);
+
     // ── Property getters ─────────────────────────────────────────────────────
     QString currentFilePath()   const { return m_currentFilePath; }
     bool    isModified()        const { return m_modified; }
@@ -117,11 +125,12 @@ public:
 
     SubsystemModel* subsystemModel()  { return m_subsystemModel; }
     PciDeviceModel* pciModel()        { return m_pciModel; }
-    WorkItemModel*  workItemModel()   { return m_workItemModel; }
+    WorkStepModel*  workStepModel()       { return m_workStepModel; }
+    int             currentWorkStepIndex() const { return m_currentWorkStepIndex; }
+    int             workStepCount() const { return m_workStepModel->rowCount(); }
 
     QVariantList recommendationBlocks() const { return m_recommendationBlocks; }
     QString recommendationsText() const;
-    QString workNotes()       const { return m_workNotes; }
 
     bool    pciIdsLoaded()       const { return m_pciAnalyzer.isPciIdsLoaded(); }
     QString pciStatusMessage()   const;
@@ -144,7 +153,7 @@ public:
 
     void setRecommendationBlocks(const QVariantList& blocks);
     void setRecommendationsText(const QString& v);
-    void setWorkNotes(const QString& v);
+    void setCurrentWorkStepIndex(int index);
 
 signals:
     void currentFilePathChanged();
@@ -154,7 +163,8 @@ signals:
     void osInstallChanged();
     void recommendationBlocksChanged();
     void recommendationsTextChanged();
-    void workNotesChanged();
+    void currentWorkStepIndexChanged();
+    void workStepCountChanged();
     void pciStatusChanged();
     void errorOccurred(const QString& message);
     void reportLoaded();
@@ -163,15 +173,19 @@ private:
     void setModified(bool v);
     void loadReportDataIntoModels(const ReportData& data);
     ReportData collectReportDataFromModels() const;
+    void loadWorkProgress(const WorkProgressData& progress, int currentIndex);
+    ProgressData collectProgressData() const;
+    void resetWorkProgress();
 
     ReportData       m_data;
-    QString          m_workNotes;
     QString          m_currentFilePath;
+    int              m_currentWorkStepIndex = 0;
     bool             m_modified = false;
 
     SubsystemModel*  m_subsystemModel;
     PciDeviceModel*  m_pciModel;
-    WorkItemModel*   m_workItemModel;
+    WorkStepModel*   m_workStepModel;
+    WorkStepsCatalog m_workStepsCatalog;
 
     PciAnalyzer      m_pciAnalyzer;
     PresetManager    m_presets;

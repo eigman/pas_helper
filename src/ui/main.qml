@@ -213,11 +213,13 @@ ApplicationWindow {
             Layout.fillHeight: true
             spacing: 0
 
-            // ── Left sidebar ──────────────────────────────────────────────────
+            // ── Left sidebar (Report tab only) ────────────────────────────────
             Rectangle {
                 id: sidebar
-                Layout.preferredWidth: 220
+                Layout.preferredWidth: mainTabIndex === 1 ? 220 : 0
+                Layout.maximumWidth: mainTabIndex === 1 ? 220 : 0
                 Layout.fillHeight: true
+                visible: mainTabIndex === 1
                 color: "#F8F9FA"
 
                 ColumnLayout {
@@ -336,10 +338,6 @@ ApplicationWindow {
                         }
                     }
 
-                    Item {
-                        Layout.fillWidth: true; Layout.fillHeight: true
-                        visible: mainTabIndex === 0
-                    }
                 }
 
                 // Right edge — must paint above list row backgrounds or the divider disappears.

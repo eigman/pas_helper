@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "id": "bios_prep",
+      "title": "Подготовка. Настройки BIOS",
+      "overviewTag": "bios",
+      "instruction": "## Рекомендуемые настройки BIOS\n\n- Advanced → CPU Configuration → Intel Hyper Threading Technology → Disabled\n- Advanced → CPU Configuration → CPU C States Support → Disabled\n- Advanced → CPU Configuration → Intel Virtualization Technology → Disabled\n- Advanced → CPU Configuration → Intel SpeedStep Technology → Disabled\n- Advanced → CPU Configuration → CPU Thermal Throttling → Disabled\n- Advanced → Chipset Configuration → Above 4G Decoding → Disabled\n- Advanced → Chipset Configuration → VT-d → Disabled\n- Advanced → Trusted Computing → Onboard TPM → Disabled\n- Security → Secure Boot → Secure Boot → Disabled\n\n## Дополнительно\n\n- SATA Mode → AHCI (не IDE, не RAID)\n- CSM / Legacy Support → Enabled (Legacy) или Disabled (UEFI)\n- Серийные порты → Enabled; COM1: 3F8h / IRQ 4, COM2: 2F8h / IRQ 3\n- Зафиксировать режим загрузки и выставить нужный носитель первым"
+    },
+    {
+      "id": "os_install_auto",
+      "title": "Установка ОС — автоматическая",
+      "overviewTag": "install",
+      "instruction": "## Действия\n\n- Создать загрузочную USB-флешку из ISO:\n```\ndd ./image.iso /dev/sdf\n```\n- Загрузиться с носителя, пройти установку\n- Проверить оба носителя (DVD и USB) и оба режима (BIOS / UEFI), если применимо\n\n## Критерий успеха\n\n- Хотя бы один способ прошёл успешно — шаг завершён\n- Если ни один не прошёл — переход к ручной установке (следующий шаг)"
+    },
+    {
+      "id": "os_install_manual",
+      "title": "Установка ОС — ручная",
+      "overviewTag": "install_manual",
+      "instruction": "## Когда нужна\n\n- Автоматическая установка не прошла ни одним способом\n\n## Действия\n\n- Определить режим: Legacy (MBR) или UEFI (GPT)\n- Настроить BIOS по статье «Настройки BIOS для не поддерживаемого оборудования»\n- Подготовить флешку для выбранного режима (MBR или GPT)\n- Подобрать загрузочный образ по рекомендациям\n- Сначала проверить загрузку с USB, затем на штатном носителе устройства\n\n## Критерий успеха\n\n- Удалось запустить систему хотя бы одним из вариантов"
+    },
+    {
+      "id": "disk",
+      "title": "Дисковая подсистема",
+      "overviewTag": "disk",
+      "instruction": "## Действия\n\n- Проверить, что диск определился и разделы корректны:\n```\nls /dev/hd*\nfdisk /dev/hd0 show    # MBR\ngdisk /dev/hd0 show    # GPT\n```\n- Проверить монтирование корневого раздела:\n```\ndf /\nmount\n```\n- Обратить внимание на время выполнения операций — аномальное замедление (на порядок и более) фиксировать в отчёте"
+    },
+    {
+      "id": "usb",
+      "title": "USB-подсистема",
+      "overviewTag": "usb",
+      "instruction": "## Действия\n\n- Убедиться, что менеджеры запущены (или запустить):\n```\nio-usb -dxhci -dehci -duhci -dohci\nsleep 1\ndevb-umass\n```\n- Перебрать все USB-порты, проверить появление устройства в /dev при каждом подключении\n- Создать разделы QNX4 и FAT32 (достаточно по одному разу для USB 2.x и USB 3.x):\n```\nfdisk /dev/hd1 add -t 77 1G\nfdisk /dev/hd1 add -t 12 1G\ndinit -h /dev/hd1t77\nmkdosfs /dev/hd1t12\n```\n- Скопировать тестовый файл, снять контрольную сумму:\n```\ndd if=/dev/random of=/tmp/testfile bs=1k count=100000\ncksum /tmp/testfile\ncp /tmp/testfile /fs/dos/ && cp /tmp/testfile /fs/qnx4/\nsync && umount /fs/dos && umount /fs/qnx4\n```\n- Переподключить накопитель, примонтировать, сравнить cksum с исходным"
+    },
+    {
+      "id": "serial",
+      "title": "Последовательные порты",
+      "overviewTag": "serial",
+      "instruction": "## Действия\n\n- В BIOS убедиться, что порты включены и IRQ стандартные (COM1: 3f8,4 / COM2: 2f8,3)\n- Проверить запуск драйвера, при необходимости запустить:\n```\ndevc-ser8250 -u1 3f8,4 -u2 2f8,3\n```\n- Проверить появление устройств:\n```\nls /dev/ser*\n```\n- Соединить COM1—COM2 нуль-модемным кабелем, проверить передачу:\n```\necho test > /dev/ser2\ncat /dev/ser1\n```\n- Повторить для всех пар портов"
+    },
+    {
+      "id": "network",
+      "title": "Сетевая подсистема",
+      "overviewTag": "network",
+      "instruction": "## Действия\n\n- Убедиться, что контроллеры включены в BIOS\n- Определить контроллеры через PCI-анализатор, сопоставить с драйвером\n- Запустить сетевой стек с нужным драйвером:\n```\nio-pkt-ksz -d e1000\n# несколько контроллеров:\nio-pkt-ksz -d e1000 -d rtl pci=0,vid=0x10ec,did=0x8139\n```\n- Проверить появление интерфейсов:\n```\nifconfig -a\n```\n- Назначить IP каждому интерфейсу, подключить кабель, проверить линк:\n```\nifconfig fec0 192.168.1.10\nping 192.168.1.1\n```"
+    },
+    {
+      "id": "graphics",
+      "title": "Графическая подсистема",
+      "overviewTag": "gpu",
+      "instruction": "## Действия\n\n- Определить графический контроллер через PCI-анализатор (vid/did)\n- Настроить /etc/system/config/display.conf\n- Запустить менеджер io-display:\n```\nio-display -dvid=0x8086,did=0x1912\n```\n- При необходимости перезапустить Photon:\n```\nslay -sSIGHUP Photon\nsleep 1\nslay io-display\n```\n- Запустить графику и проверить вывод:\n```\nph\n```"
+    },
+    {
+      "id": "audio",
+      "title": "Звуковая подсистема",
+      "overviewTag": "audio",
+      "instruction": "## Действия\n\n- Определить звуковой контроллер через PCI-анализатор\n- Запустить io-audio с нужным драйвером:\n```\nio-audio -d intel_hda\n```\n- Проверить, что устройства созданы:\n```\nls /dev/snd\n```\n- Настроить громкость через mixer в Photon или mix_ctl — размьютить все каналы\n- Проверить воспроизведение:\n```\nwave template.wav\n```\n- Проверить захват с микрофона:\n```\nwaverec -t10 test.wav\nwave test.wav\n```"
+    }
+  ]
+}

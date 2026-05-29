@@ -11,12 +11,12 @@ AppController::AppController(QObject* parent)
     : QObject(parent)
     , m_subsystemModel(new SubsystemModel(this))
     , m_pciModel(new PciDeviceModel(this))
-    , m_workItemModel(new WorkItemModel(this))
+    , m_workStepModel(new WorkStepModel(this))
 {
-    // Propagate subsystem changes as "modified"
     connect(m_subsystemModel, &QAbstractItemModel::dataChanged, this, [this]{ setModified(true); });
     connect(m_subsystemModel, &QAbstractItemModel::rowsInserted, this, [this]{ setModified(true); });
     connect(m_subsystemModel, &QAbstractItemModel::rowsRemoved, this, [this]{ setModified(true); });
+    connect(m_workStepModel, &WorkStepModel::stepDataChanged, this, [this]{ setModified(true); });
 }
 
 void AppController::initialize(const QString& binaryDir)
@@ -32,6 +32,15 @@ void AppController::initialize(const QString& binaryDir)
         QStringLiteral("resources/presets/field_examples.json"));
     if (!m_examples.load(examplesPath)) {
         emit errorOccurred(QStringLiteral("Не удалось загрузить примеры из ") + examplesPath);
+    }
+
+    const QString workStepsPath = QDir(binaryDir).filePath(
+        QStringLiteral("resources/presets/work_steps.json"));
+    if (!m_workStepsCatalog.load(workStepsPath)) {
+        emit errorOccurred(QStringLiteral("Не удалось загрузить этапы работ из ") + workStepsPath);
+    } else {
+        m_workStepModel->setCatalog(m_workStepsCatalog.steps());
+        emit workStepCountChanged();
     }
 
     // Add all preset subsystems by default
@@ -58,9 +67,7 @@ bool AppController::openFile(const QString& path)
     auto progress = Storage::loadProgress(path);
     if (progress) {
         loadReportDataIntoModels(progress->reportData);
-        m_workNotes = progress->workNotes;
-        m_workItemModel->setItems(progress->workItems);
-        emit workNotesChanged();
+        loadWorkProgress(progress->workProgress, progress->workCurrentIndex);
     } else {
         // Fall back to parsing the TXT file
         auto text = Storage::readTextFile(path);
@@ -74,6 +81,7 @@ bool AppController::openFile(const QString& path)
             return false;
         }
         loadReportDataIntoModels(*parsed);
+        resetWorkProgress();
     }
 
     m_currentFilePath = path;
@@ -99,12 +107,10 @@ bool AppController::saveFileAs(const QString& path)
         return false;
     }
 
-    // Save progress alongside
-    ProgressData prog;
+    ProgressData prog = collectProgressData();
     prog.reportData = m_data;
-    prog.workNotes  = m_workNotes;
-    prog.workItems  = m_workItemModel->items();
     Storage::saveProgress(path, prog);
+    Storage::writeWorkSummary(path, m_workStepsCatalog.steps(), prog.workProgress.states);
 
     m_currentFilePath = path;
     setModified(false);
@@ -127,16 +133,14 @@ bool AppController::exportTxt(const QString& path)
 void AppController::newReport()
 {
     m_data = ReportData{};
-    m_workNotes.clear();
     m_currentFilePath.clear();
-    m_workItemModel->setItems({});
     loadReportDataIntoModels(m_data);
+    resetWorkProgress();
     setModified(false);
     emit currentFilePathChanged();
     emit windowTitleChanged();
     emit deviceChanged();
     emit osInstallChanged();
-    emit workNotesChanged();
     emit reportLoaded();
 }
 
@@ -359,11 +363,28 @@ void AppController::setRecommendationsText(const QString& v)
     setRecommendationBlocks(RecommendationsConverter::plainTextToBlocks(v));
 }
 
-void AppController::setWorkNotes(const QString& v)
+void AppController::setCurrentWorkStepIndex(int index)
 {
-    if (m_workNotes == v) return;
-    m_workNotes = v;
-    emit workNotesChanged();
+    const int maxIdx = qMax(0, m_workStepModel->rowCount() - 1);
+    const int clamped = qBound(0, index, maxIdx);
+    if (m_currentWorkStepIndex == clamped) return;
+    m_currentWorkStepIndex = clamped;
+    emit currentWorkStepIndexChanged();
+}
+
+void AppController::nextWorkStep()
+{
+    setCurrentWorkStepIndex(m_currentWorkStepIndex + 1);
+}
+
+void AppController::prevWorkStep()
+{
+    setCurrentWorkStepIndex(m_currentWorkStepIndex - 1);
+}
+
+void AppController::goToWorkStep(int index)
+{
+    setCurrentWorkStepIndex(index);
 }
 
 // ── Internal ─────────────────────────────────────────────────────────────────
@@ -411,4 +432,24 @@ ReportData AppController::collectReportDataFromModels() const
     data.recommendationsJson = RecommendationsConverter::blocksToJson(m_recommendationBlocks);
     data.recommendations = RecommendationsConverter::blocksToMarkup(m_recommendationBlocks);
     return data;
+}
+
+void AppController::loadWorkProgress(const WorkProgressData& progress, int currentIndex)
+{
+    m_workStepModel->applyProgress(progress);
+    setCurrentWorkStepIndex(currentIndex);
+}
+
+ProgressData AppController::collectProgressData() const
+{
+    ProgressData prog;
+    prog.workProgress = m_workStepModel->progressData();
+    prog.workCurrentIndex = m_currentWorkStepIndex;
+    return prog;
+}
+
+void AppController::resetWorkProgress()
+{
+    m_workStepModel->resetStates();
+    setCurrentWorkStepIndex(0);
 }

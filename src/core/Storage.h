@@ -1,15 +1,16 @@
 #pragma once
 
 #include "ReportData.h"
-#include "WorkItemModel.h"
+#include "WorkStepTypes.h"
+#include <QJsonObject>
 #include <QString>
 #include <QList>
 #include <optional>
 
 struct ProgressData {
-    ReportData reportData;
-    QString workNotes;
-    QList<WorkItem> workItems;
+    ReportData       reportData;
+    WorkProgressData workProgress;
+    int              workCurrentIndex = 0;
 };
 
 // Handles reading and writing of:
@@ -29,8 +30,15 @@ public:
 
     // Derive .progress.json path from a .txt report path
     static QString progressPath(const QString& txtPath);
+    static QString workSummaryPath(const QString& txtPath);
+
+    static bool writeWorkSummary(const QString& txtPath,
+                                 const QList<WorkStepTemplate>& catalog,
+                                 const QList<WorkStepState>& states);
 
 private:
+    static WorkProgressData workProgressFromJson(const QJsonObject& root);
+    static QJsonObject workProgressToJson(const WorkProgressData& progress, int currentIndex);
     static QJsonObject reportDataToJson(const ReportData& data);
     static ReportData reportDataFromJson(const QJsonObject& obj);
 };

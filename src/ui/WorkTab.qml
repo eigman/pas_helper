@@ -1,297 +1,242 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
 import QtQuick.Layouts
 
-// Work tab — personal notepad and checklist, independent from report content.
 Item {
     id: root
+    focus: true
 
-    ScrollView {
+    readonly property int idx: controller.currentWorkStepIndex
+    readonly property int total: controller.workStepCount
+    readonly property bool canPrev: idx > 0
+    readonly property bool canNext: idx < total - 1
+
+    // Track previous index so we can flush the note before switching.
+    property int _prevIdx: 0
+
+    Keys.onLeftPressed:  if (canPrev) controller.prevWorkStep()
+    Keys.onRightPressed: if (canNext) controller.nextWorkStep()
+
+    function flushNote() {
+        if (total > 0)
+            controller.workStepModel.setNote(_prevIdx, noteArea.text)
+    }
+
+    function syncFields() {
+        flushNote()
+        _prevIdx = idx
+        noteArea.text         = total > 0 ? controller.workStepModel.noteAt(idx) : ""
+        statusToggle.currentValue = total > 0 ? controller.workStepModel.statusAt(idx) : ""
+    }
+
+    Component.onCompleted: { _prevIdx = idx; syncFields() }
+
+    Connections {
+        target: controller
+        function onCurrentWorkStepIndexChanged() { root.syncFields() }
+    }
+    Connections {
+        target: controller.workStepModel
+        function onStepDataChanged() {
+            if (!noteArea.activeFocus)
+                noteArea.text = total > 0 ? controller.workStepModel.noteAt(idx) : ""
+            if (!statusToggle.activeFocus)
+                statusToggle.currentValue = total > 0 ? controller.workStepModel.statusAt(idx) : ""
+        }
+    }
+
+    RowLayout {
         anchors.fill: parent
-        contentWidth: availableWidth
-        clip: true
+        spacing: 0
 
+        // ── Step list ─────────────────────────────────────────────────────
+        Rectangle {
+            Layout.preferredWidth: 280
+            Layout.fillHeight: true
+            color: "#F8F9FA"
+
+            Rectangle {
+                anchors.right: parent.right
+                width: 1; height: parent.height
+                color: "#E5E7EB"
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 0
+
+                // Header — same height as right panel header
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 56
+                    color: "white"
+
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: parent.width; height: 1
+                        color: "#E5E7EB"
+                    }
+
+                    Label {
+                        anchors.left: parent.left
+                        anchors.leftMargin: 16
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "Этапы"
+                        font.pixelSize: 13
+                        font.weight: Font.Medium
+                        color: "#374151"
+                    }
+                }
+
+                ListView {
+                    id: stepList
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    model: controller.workStepModel
+                    spacing: 4
+                    topMargin: 8
+                    bottomMargin: 8
+                    leftMargin: 8
+                    rightMargin: 8
+
+                    delegate: WorkStepListItem {
+                        width: stepList.width - 16
+                        title: model.title
+                        status: model.status
+                        selected: controller.currentWorkStepIndex === index
+                        onClicked: controller.goToWorkStep(index)
+                    }
+                }
+            }
+        }
+
+        // ── Detail pane ───────────────────────────────────────────────────
         ColumnLayout {
-            width: parent.width
+            Layout.fillWidth: true
+            Layout.fillHeight: true
             spacing: 0
 
-            // ── Page header ───────────────────────────────────────────────────
+            // Header
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 60
+                implicitHeight: 56
                 color: "white"
 
                 Rectangle {
                     anchors.bottom: parent.bottom
-                    width: parent.width
-                    height: 1
+                    width: parent.width; height: 1
                     color: "#E5E7EB"
                 }
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 32
-                    anchors.rightMargin: 32
+                    anchors.leftMargin: 20
+                    anchors.rightMargin: 20
+                    spacing: 12
 
                     Label {
-                        text: "Рабочий лист"
-                        font.pixelSize: 20
+                        text: total > 0 ? controller.workStepModel.titleAt(idx) : "Рабочий лист"
+                        font.pixelSize: 17
                         font.weight: Font.Medium
                         color: "#111827"
                         Layout.fillWidth: true
+                        elide: Text.ElideRight
                     }
 
                     Label {
-                        text: doneCount + " / " + controller.workItemModel.count + " выполнено"
-                        font.pixelSize: 13
+                        text: (idx + 1) + " / " + total
+                        font.pixelSize: 12
                         color: "#6B7280"
+                    }
 
-                        property int doneCount: {
-                            let n = 0
-                            for (let i = 0; i < controller.workItemModel.count; i++) {
-                                if (controller.workItemModel.isDone(i)) n++
-                            }
-                            return n
-                        }
+                    WorkNavButton {
+                        icon: "‹"
+                        enabled: canPrev
+                        onTriggered: controller.prevWorkStep()
+                    }
+                    WorkNavButton {
+                        icon: "›"
+                        enabled: canNext
+                        onTriggered: controller.nextWorkStep()
                     }
                 }
             }
 
-            // ── Content ───────────────────────────────────────────────────────
+            // Content
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.margins: 32
-                spacing: 20
+                Layout.fillHeight: true
+                Layout.margins: 16
+                spacing: 12
 
-                // ── Checklist card ────────────────────────────────────────────
+                // Instruction — main area, fills all available space
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: checklistContent.implicitHeight + 32
-                    color: "white"
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 180
                     radius: 8
-                    border.color: "#E5E7EB"
+                    color: "#F8FAFC"
+                    border.color: "#E2E8F0"
                     border.width: 1
 
-                    ColumnLayout {
-                        id: checklistContent
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.margins: 16
-                        spacing: 0
-
-                        Label {
-                            text: "Чек-лист проверки"
-                            font.pixelSize: 14
-                            font.weight: Font.Medium
-                            color: "#374151"
-                            Layout.bottomMargin: 12
-                        }
-
-                        // Check items
-                        Repeater {
-                            id: checkListRepeater
-                            model: controller.workItemModel
-
-                            delegate: Rectangle {
-                                Layout.fillWidth: true
-                                implicitHeight: 44
-                                color: "white"
-
-                                // Bottom divider
-                                Rectangle {
-                                    anchors.bottom: parent.bottom
-                                    width: parent.width
-                                    height: 1
-                                    color: "#F3F4F6"
-                                    visible: index < checkListRepeater.count - 1
-                                }
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 4
-                                    anchors.rightMargin: 8
-                                    spacing: 8
-
-                                    // Custom checkbox
-                                    Rectangle {
-                                        width: 18
-                                        height: 18
-                                        radius: 4
-                                        border.color: model.done ? "#3B82F6" : "#D1D5DB"
-                                        border.width: 1.5
-                                        color: model.done ? "#3B82F6" : "white"
-                                        Layout.alignment: Qt.AlignVCenter
-
-                                        Label {
-                                            anchors.centerIn: parent
-                                            text: "✓"
-                                            font.pixelSize: 11
-                                            color: "white"
-                                            visible: model.done
-                                        }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: controller.workItemModel.setDone(index, !model.done)
-                                        }
-                                    }
-
-                                    TextField {
-                                        text: model.itemText
-                                        Layout.fillWidth: true
-                                        placeholderText: "Пункт проверки..."
-                                        font.pixelSize: 14
-                                        font.strikeout: model.done
-                                        color: model.done ? "#9CA3AF" : "#111827"
-                                        background: null
-                                        leftPadding: 0
-                                        onEditingFinished: controller.workItemModel.setText(index, text)
-                                    }
-
-                                    // Remove button
-                                    Rectangle {
-                                        width: 24
-                                        height: 24
-                                        radius: 4
-                                        color: removeHover.containsMouse ? "#FEE2E2" : "transparent"
-
-                                        Label {
-                                            anchors.centerIn: parent
-                                            text: "×"
-                                            font.pixelSize: 16
-                                            color: removeHover.containsMouse ? "#DC2626" : "#9CA3AF"
-                                        }
-
-                                        HoverHandler { id: removeHover }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: controller.workItemModel.removeItem(index)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Add item row
-                        Rectangle {
-                            Layout.fillWidth: true
-                            implicitHeight: 44
-                            color: "white"
-                            visible: checkListRepeater.count > 0
-
-                            Rectangle {
-                                anchors.top: parent.top
-                                width: parent.width
-                                height: 1
-                                color: "#F3F4F6"
-                            }
-
-                            // placeholder handled below
-                        }
-
-                        // Add new item — dashed border row
-                        Rectangle {
-                            Layout.fillWidth: true
-                            implicitHeight: 44
-                            color: addItemHover.containsMouse ? "#F9FAFB" : "white"
-                            radius: 6
-                            border.color: "#D1D5DB"
-                            border.width: 1
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 12
-                                anchors.rightMargin: 12
-                                spacing: 8
-
-                                Label {
-                                    text: "+"
-                                    font.pixelSize: 16
-                                    color: "#6B7280"
-                                }
-
-                                TextField {
-                                    id: newItemField
-                                    Layout.fillWidth: true
-                                    placeholderText: "Добавить пункт..."
-                                    font.pixelSize: 14
-                                    color: "#111827"
-                                    background: null
-                                    leftPadding: 0
-                                    onAccepted: addItem()
-                                }
-
-                                // Presets dropdown
-                                PresetsPopup {
-                                    buttonLabel: "Из пресетов"
-                                    implicitWidth: 120; implicitHeight: 34
-                                    presets: controller.osInstallChecksPresets()
-                                    onSelected: function(v) { controller.workItemModel.addItem(v) }
-                                }
-                            }
-
-                            HoverHandler { id: addItemHover }
-                        }
-                    }
-                }
-
-                // ── Notes card ────────────────────────────────────────────────
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: 280
-                    color: "white"
-                    radius: 8
-                    border.color: "#E5E7EB"
-                    border.width: 1
-
-                    ColumnLayout {
+                    ScrollView {
                         anchors.fill: parent
-                        anchors.margins: 16
-                        spacing: 12
+                        anchors.margins: 14
+                        clip: true
+                        contentWidth: availableWidth
 
-                        Label {
-                            text: "Заметки"
-                            font.pixelSize: 14
-                            font.weight: Font.Medium
-                            color: "#374151"
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 1
-                            color: "#F3F4F6"
-                        }
-
-                        TextArea {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            text: controller.workNotes
-                            placeholderText: "Здесь можно писать заметки по ходу работы, алгоритмы действий, промежуточные результаты...\n\nЭти заметки не попадают в отчёт."
-                            wrapMode: TextArea.Wrap
-                            font.pixelSize: 13
-                            color: "#374151"
-                            background: null
-                            topPadding: 0
-                            leftPadding: 0
-                            onTextChanged: controller.workNotes = text
+                        InstructionView {
+                            width: parent.width
+                            source: total > 0 ? controller.workStepModel.instructionAt(idx) : ""
                         }
                     }
                 }
 
-                Item { implicitHeight: 16 }
+                // Status toggle
+                ResultToggle {
+                    id: statusToggle
+                    Layout.fillWidth: true
+                    onValueChanged: function(v) {
+                        if (total > 0)
+                            controller.workStepModel.setStatus(idx, v)
+                    }
+                }
+
+                // Note field
+                TextArea {
+                    id: noteArea
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 88
+                    Layout.maximumHeight: 120
+                    placeholderText: "Текст заметки"
+                    wrapMode: TextArea.Wrap
+                    font.pixelSize: 13
+                    color: "#374151"
+                    placeholderTextColor: "#9CA3AF"
+                    topPadding: 8
+                    leftPadding: 10
+                    rightPadding: 10
+                    bottomPadding: 8
+                    background: Rectangle {
+                        radius: 8
+                        color: "#F9FAFB"
+                        border.color: noteArea.activeFocus ? "#93C5FD" : "#E5E7EB"
+                        border.width: 1
+                    }
+                    onActiveFocusChanged: {
+                        if (!activeFocus && total > 0)
+                            controller.workStepModel.setNote(idx, text)
+                    }
+                }
             }
         }
     }
 
-    function addItem() {
-        if (newItemField.text.trim() !== "") {
-            controller.workItemModel.addItem(newItemField.text)
-            newItemField.text = ""
+    Connections {
+        target: controller
+        function onCurrentWorkStepIndexChanged() {
+            stepList.positionViewAtIndex(controller.currentWorkStepIndex, ListView.Contain)
         }
     }
 }

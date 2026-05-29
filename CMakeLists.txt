@@ -21,7 +21,9 @@ set(SOURCES
     src/core/Storage.cpp
     src/core/SubsystemModel.cpp
     src/core/PciDeviceModel.cpp
-    src/core/WorkItemModel.cpp
+    src/core/WorkStepsCatalog.cpp
+    src/core/WorkStepModel.cpp
+    src/core/WorkSummaryExporter.cpp
 )
 
 qt_add_executable(ReportAssistant ${SOURCES})
@@ -45,6 +47,9 @@ set_source_files_properties(src/ui/components/InterfacePickerPopup.qml   PROPERT
 set_source_files_properties(src/ui/components/RamPickerPopup.qml         PROPERTIES QT_RESOURCE_ALIAS RamPickerPopup.qml)
 set_source_files_properties(src/ui/components/FieldHelpIcon.qml           PROPERTIES QT_RESOURCE_ALIAS FieldHelpIcon.qml)
 set_source_files_properties(src/ui/components/FieldLabelRow.qml          PROPERTIES QT_RESOURCE_ALIAS FieldLabelRow.qml)
+set_source_files_properties(src/ui/components/InstructionView.qml        PROPERTIES QT_RESOURCE_ALIAS InstructionView.qml)
+set_source_files_properties(src/ui/components/WorkStepListItem.qml      PROPERTIES QT_RESOURCE_ALIAS WorkStepListItem.qml)
+set_source_files_properties(src/ui/components/WorkNavButton.qml         PROPERTIES QT_RESOURCE_ALIAS WorkNavButton.qml)
 
 qt_add_qml_module(ReportAssistant
     URI ReportAssistant
@@ -67,7 +72,10 @@ qt_add_qml_module(ReportAssistant
         src/ui/components/RamPickerPopup.qml
         src/ui/components/FieldHelpIcon.qml
         src/ui/components/FieldLabelRow.qml
-)
+        src/ui/components/InstructionView.qml
+        src/ui/components/WorkStepListItem.qml
+        src/ui/components/WorkNavButton.qml
+    )
 
 # Resources (presets JSON + icons) embedded via Qt resource system
 qt_add_resources(ReportAssistant "appresources"
@@ -75,6 +83,7 @@ qt_add_resources(ReportAssistant "appresources"
     FILES
         resources/presets/subsystems.json
         resources/presets/field_examples.json
+        resources/presets/work_steps.json
         resources/icons/disk.svg
         resources/icons/monitor.svg
         resources/icons/network.svg

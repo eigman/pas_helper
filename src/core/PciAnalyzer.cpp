@@ -13,14 +13,6 @@ QString PciDevice::controllerString() const
     return name + QStringLiteral(" [") + vendorId + QLatin1Char(':') + deviceId + QLatin1Char(']');
 }
 
-QString PciDevice::controllerMarkupString() const
-{
-    const QString name = deviceName.isEmpty()
-                             ? QStringLiteral("Unknown [%1:%2]").arg(vendorId, deviceId)
-                             : deviceName;
-    return name + QStringLiteral(" \\n[**") + vendorId + QLatin1Char(':') + deviceId + QStringLiteral("**]");
-}
-
 PciAnalyzer::PciAnalyzer() = default;
 
 bool PciAnalyzer::loadPciIds(const QString& binaryDir)

@@ -83,7 +83,4 @@ struct ReportData {
     QString recommendations;     // markup for @group recomendations (generated on export)
     QString recommendationsJson;   // UI blocks JSON (saved in progress)
 
-    bool isEmpty() const {
-        return device.pageTitle.isEmpty() && subsystems.isEmpty();
-    }
 };

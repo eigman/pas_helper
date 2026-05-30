@@ -19,9 +19,6 @@ struct PciDevice {
     // "<deviceName> [<vendorId>:<deviceId>]"
     QString controllerString() const;
 
-    // Controller string used in exported report:
-    // "<deviceName> \n[**<vendorId>:<deviceId>**]"
-    QString controllerMarkupString() const;
 };
 
 // Parses QNX `pci -vvv` output and performs pci.ids lookups.

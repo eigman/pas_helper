@@ -29,11 +29,11 @@ Item {
         id: btn
         anchors.fill: parent
         radius: 6
-        color: btnHover.containsMouse ? "#EFF6FF" : "transparent"
+        color: btnHover.containsMouse ? "#E0F2FE" : "transparent"
 
         Text {
             anchors.centerIn: parent
-            text: root.buttonLabel; font.pixelSize: 12; color: "#3B82F6"
+            text: root.buttonLabel; font.pixelSize: 12; color: "#0EA5E9"
         }
 
         HoverHandler { id: btnHover }
@@ -93,8 +93,8 @@ Item {
                         model: ["DDR2", "DDR3", "DDR4", "DDR5"]
                         delegate: Rectangle {
                             width: 100; height: 32; radius: 16
-                            color: root._gen === modelData ? "#3B82F6" : (chipHoverG.containsMouse ? "#EFF6FF" : "#F3F4F6")
-                            border.color: root._gen === modelData ? "#3B82F6" : "#E5E7EB"
+                            color: root._gen === modelData ? "#0EA5E9" : (chipHoverG.containsMouse ? "#E0F2FE" : "#F3F4F6")
+                            border.color: root._gen === modelData ? "#0EA5E9" : "#E5E7EB"
                             border.width: 1
 
                             Text {
@@ -143,8 +143,8 @@ Item {
                             delegate: Rectangle {
                                 width: (parent.width - 6) / 2
                                 height: 32; radius: 16
-                                color: root._cap === modelData ? "#3B82F6" : (chipHoverC.containsMouse ? "#EFF6FF" : "#F3F4F6")
-                                border.color: root._cap === modelData ? "#3B82F6" : "#E5E7EB"
+                                color: root._cap === modelData ? "#0EA5E9" : (chipHoverC.containsMouse ? "#E0F2FE" : "#F3F4F6")
+                                border.color: root._cap === modelData ? "#0EA5E9" : "#E5E7EB"
                                 border.width: 1
 
                                 Text {

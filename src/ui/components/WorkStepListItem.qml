@@ -20,8 +20,8 @@ Rectangle {
 
     implicitHeight: 44
     radius: 6
-    color: selected ? "#EFF6FF" : (rowHover.containsMouse ? "#F3F4F6" : "white")
-    border.color: selected ? "#3B82F6" : "#E5E7EB"
+    color: selected ? "#E0F2FE" : (rowHover.containsMouse ? "#F3F4F6" : "white")
+    border.color: selected ? "#0EA5E9" : "#E5E7EB"
     border.width: selected ? 1.5 : 1
 
     HoverHandler { id: rowHover }

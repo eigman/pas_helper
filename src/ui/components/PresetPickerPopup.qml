@@ -17,12 +17,12 @@ Item {
         id: btn
         anchors.fill: parent
         radius: 6
-        color: btnHover.containsMouse ? "#EFF6FF" : "transparent"
+        color: btnHover.containsMouse ? "#E0F2FE" : "transparent"
 
         Row {
             anchors.centerIn: parent; spacing: 4
-            Text { text: root.buttonLabel; font.pixelSize: 12; color: "#3B82F6"; anchors.verticalCenter: parent.verticalCenter }
-            Text { text: "＋"; font.pixelSize: 11; color: "#3B82F6"; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: root.buttonLabel; font.pixelSize: 12; color: "#0EA5E9"; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: "＋"; font.pixelSize: 11; color: "#0EA5E9"; anchors.verticalCenter: parent.verticalCenter }
         }
 
         HoverHandler { id: btnHover }

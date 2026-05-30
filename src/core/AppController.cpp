@@ -5,7 +5,9 @@
 #include "RecommendationsConverter.h"
 
 #include <QDir>
+#include <QFileInfo>
 #include <QTimer>
+#include <QUrl>
 
 AppController::AppController(QObject* parent)
     : QObject(parent)
@@ -17,6 +19,13 @@ AppController::AppController(QObject* parent)
     connect(m_subsystemModel, &QAbstractItemModel::rowsInserted, this, [this]{ setModified(true); });
     connect(m_subsystemModel, &QAbstractItemModel::rowsRemoved, this, [this]{ setModified(true); });
     connect(m_workStepModel, &WorkStepModel::stepDataChanged, this, [this]{ setModified(true); });
+
+    m_autoSaveTimer.setSingleShot(true);
+    m_autoSaveTimer.setInterval(2500);
+    connect(&m_autoSaveTimer, &QTimer::timeout, this, [this]() {
+        if (m_modified && !m_currentFilePath.isEmpty())
+            saveFile();
+    });
 }
 
 void AppController::initialize(const QString& binaryDir)
@@ -130,18 +139,86 @@ bool AppController::exportTxt(const QString& path)
     return true;
 }
 
-void AppController::newReport()
+void AppController::resetReportToDefaults()
 {
     m_data = ReportData{};
-    m_currentFilePath.clear();
-    loadReportDataIntoModels(m_data);
+
+    QList<SubsystemEntry> subsystems;
+    for (const QString& name : m_presets.subsystemNames()) {
+        SubsystemEntry entry;
+        entry.name = name;
+        entry.testResult = QStringLiteral("Успешно");
+        entry.icon = m_presets.iconForSubsystem(name);
+        const SubsystemPreset preset = m_presets.presetForSubsystem(name);
+        if (!preset.defaultChecks.isEmpty()) {
+            for (const QString& text : preset.defaultChecks)
+                entry.checkItems << CheckItem{ text };
+        }
+        if (!preset.defaultController.isEmpty())
+            entry.controller = preset.defaultController;
+        if (!preset.defaultInterfaces.isEmpty())
+            entry.interfaces = preset.defaultInterfaces;
+        if (!preset.defaultDriver.isEmpty())
+            entry.driver = preset.defaultDriver;
+        subsystems << entry;
+    }
+    m_subsystemModel->setSubsystems(subsystems);
+
+    m_data.osInstall.checkItems.clear();
+    for (const QString& text : m_presets.defaultOsInstallChecks())
+        m_data.osInstall.checkItems << CheckItem{ text };
+
+    m_recommendationBlocks.clear();
+    m_pciModel->setDevices({});
     resetWorkProgress();
-    setModified(false);
-    emit currentFilePathChanged();
-    emit windowTitleChanged();
+
     emit deviceChanged();
     emit osInstallChanged();
+    emit recommendationBlocksChanged();
+    emit recommendationsTextChanged();
     emit reportLoaded();
+}
+
+QString AppController::resolveProjectReportPath(const QString& selectedPath)
+{
+    QString native = selectedPath;
+    if (selectedPath.startsWith(QStringLiteral("file://")))
+        native = QUrl(selectedPath).toLocalFile();
+    native = native.trimmed();
+    if (native.isEmpty())
+        return {};
+
+    QFileInfo fi(native);
+    const QString baseName = fi.completeBaseName();
+    if (baseName.isEmpty())
+        return {};
+
+    const QString projectDir = fi.dir().absoluteFilePath(baseName);
+    if (!QDir().mkpath(projectDir))
+        return {};
+
+    return QDir(projectDir).absoluteFilePath(baseName + QStringLiteral(".txt"));
+}
+
+bool AppController::createNewProject(const QString& selectedPath)
+{
+    const QString reportPath = resolveProjectReportPath(selectedPath);
+    if (reportPath.isEmpty()) {
+        emit errorOccurred(QStringLiteral("Не удалось создать директорию проекта"));
+        return false;
+    }
+
+    resetReportToDefaults();
+    m_currentFilePath.clear();
+
+    if (!saveFileAs(reportPath))
+        return false;
+
+    // Explicit immediate save after creation.
+    saveFile();
+
+    emit reportLoaded();
+    return true;
 }
 
 // ── Subsystem operations ─────────────────────────────────────────────────────
@@ -192,6 +269,8 @@ void AppController::parsePciDump(const QString& dumpText)
 
 void AppController::assignPciToSubsystem(int pciIndex, int subsystemIndex)
 {
+    if (subsystemIndex < 0 || subsystemIndex >= m_subsystemModel->rowCount()) return;
+
     const PciDevice dev = m_pciModel->deviceAt(pciIndex);
     if (dev.vendorId.isEmpty()) return;
 
@@ -199,6 +278,7 @@ void AppController::assignPciToSubsystem(int pciIndex, int subsystemIndex)
                                QStringLiteral("controller"),
                                dev.controllerString());
     setModified(true);
+    emit pciAssigned(subsystemIndex);
 }
 
 // ── OS Install check items ────────────────────────────────────────────────────
@@ -391,8 +471,13 @@ void AppController::goToWorkStep(int index)
 
 void AppController::setModified(bool v)
 {
+    if (v && !m_currentFilePath.isEmpty())
+        m_autoSaveTimer.start();
+
     if (m_modified == v) return;
     m_modified = v;
+    if (!m_modified)
+        m_autoSaveTimer.stop();
     emit isModifiedChanged();
     emit windowTitleChanged();
 }

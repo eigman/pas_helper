@@ -7,7 +7,7 @@ import QtQuick.Layouts
 Item {
     id: root
 
-    signal saveAsRequested()
+    signal createProjectRequested()
 
     property bool _updating: false
 
@@ -295,7 +295,7 @@ Item {
                         background: Rectangle {
                             color: "#F9FAFB"
                             radius: 6
-                            border.color: editor.activeFocus ? "#3B82F6" : "#E5E7EB"
+                            border.color: editor.activeFocus ? "#0EA5E9" : "#E5E7EB"
                             border.width: editor.activeFocus ? 1.5 : 1
                         }
 
@@ -363,7 +363,7 @@ Item {
                     implicitWidth: saveBtnLabel.implicitWidth + 32
                     implicitHeight: 36
                     radius: 6
-                    color: saveBtnHover.containsMouse ? "#1D4ED8" : "#3B82F6"
+                    color: saveBtnHover.containsMouse ? "#0284C7" : "#0EA5E9"
 
                     Label {
                         id: saveBtnLabel
@@ -381,7 +381,7 @@ Item {
                             if (controller.currentFilePath !== "")
                                 controller.saveFile()
                             else
-                                root.saveAsRequested()
+                                root.createProjectRequested()
                         }
                     }
                 }

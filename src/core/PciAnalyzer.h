@@ -15,9 +15,13 @@ struct PciDevice {
     // Auto-suggested subsystem name based on class (may be empty if class is unknown/internal)
     QString suggestedSubsystem;
 
-    // Pre-formatted controller string for insertion into report:
-    // "<deviceName> \n[**<vendorId>:<deviceId>**]"
+    // Controller string shown in UI edit fields:
+    // "<deviceName> [<vendorId>:<deviceId>]"
     QString controllerString() const;
+
+    // Controller string used in exported report:
+    // "<deviceName> \n[**<vendorId>:<deviceId>**]"
+    QString controllerMarkupString() const;
 };
 
 // Parses QNX `pci -vvv` output and performs pci.ids lookups.

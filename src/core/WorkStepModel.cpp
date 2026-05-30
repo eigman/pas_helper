@@ -81,6 +81,9 @@ void WorkStepModel::resetStates()
 {
     m_states.clear();
     m_states.resize(m_catalog.size());
+    if (!m_catalog.isEmpty()) {
+        emit dataChanged(index(0), index(m_catalog.size() - 1));
+    }
     emit stepDataChanged();
 }
 

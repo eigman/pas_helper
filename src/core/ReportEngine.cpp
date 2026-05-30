@@ -1,6 +1,149 @@
 #include "ReportEngine.h"
 #include "RecommendationsConverter.h"
 #include <QTextStream>
+#include <QRegularExpression>
+#include <QStringList>
+
+namespace {
+QString normalizeSpaces(const QString& text)
+{
+    QString out = text;
+    out.replace(QLatin1Char('\n'), QLatin1Char(' '));
+    out.replace(QRegularExpression(QStringLiteral("\\s+")), QStringLiteral(" "));
+    return out.trimmed();
+}
+
+QString wrapLineByWords(const QString& line, int maxChars)
+{
+    const QString source = normalizeSpaces(line);
+    if (source.isEmpty() || maxChars <= 0)
+        return source;
+
+    QStringList words = source.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    if (words.isEmpty())
+        return QString();
+
+    QStringList lines;
+    QString current;
+
+    auto pushCurrent = [&]() {
+        if (!current.isEmpty()) {
+            lines << current;
+            current.clear();
+        }
+    };
+
+    for (const QString& word : words) {
+        // No spaces in a long token (e.g. very long identifier) — force-wrap it.
+        if (word.size() > maxChars) {
+            pushCurrent();
+            int pos = 0;
+            while (pos < word.size()) {
+                lines << word.mid(pos, maxChars);
+                pos += maxChars;
+            }
+            continue;
+        }
+
+        if (current.isEmpty()) {
+            current = word;
+            continue;
+        }
+
+        if (current.size() + 1 + word.size() <= maxChars) {
+            current += QStringLiteral(" ") + word;
+        } else {
+            pushCurrent();
+            current = word;
+        }
+    }
+    pushCurrent();
+    return lines.join(QStringLiteral(" \\n "));
+}
+
+QString wrapCellPreservingBreaks(const QString& text, int maxChars)
+{
+    const QStringList rawLines = text.split(QRegularExpression(QStringLiteral("\\s*\\\\n\\s*")), Qt::SkipEmptyParts);
+    QStringList wrappedLines;
+    wrappedLines.reserve(rawLines.size());
+    for (const QString& rawLine : rawLines) {
+        const QString wrapped = wrapLineByWords(rawLine, maxChars);
+        if (!wrapped.isEmpty())
+            wrappedLines << wrapped;
+    }
+    return wrappedLines.isEmpty() ? QStringLiteral("-") : wrappedLines.join(QStringLiteral(" \\n "));
+}
+
+QStringList splitListItems(const QString& rawText, bool allowComma)
+{
+    QString normalized = rawText;
+    normalized.replace(QStringLiteral("\\n"), QStringLiteral("\n"));
+    normalized.replace(QLatin1Char(';'), QLatin1Char('\n'));
+    if (allowComma)
+        normalized.replace(QLatin1Char(','), QLatin1Char('\n'));
+
+    const QStringList items = normalized.split(QRegularExpression(QStringLiteral("\\s*\n\\s*")), Qt::SkipEmptyParts);
+    QStringList cleaned;
+    cleaned.reserve(items.size());
+    for (const QString& item : items) {
+        const QString v = normalizeSpaces(item);
+        if (!v.isEmpty())
+            cleaned << v;
+    }
+    return cleaned;
+}
+
+QString controllerForExportSingle(const QString& rawController)
+{
+    const QString trimmed = normalizeSpaces(rawController);
+    if (trimmed.isEmpty())
+        return QStringLiteral("-");
+
+    // Already in canonical report markup.
+    static const QRegularExpression canonicalRe(
+        QStringLiteral("^(.+?)\\s+\\\\n\\s*\\[\\*\\*([0-9a-fA-F]{4}:[0-9a-fA-F]{4})\\*\\*\\]$"));
+    const auto canonicalMatch = canonicalRe.match(trimmed);
+    if (canonicalMatch.hasMatch()) {
+        const QString name = canonicalMatch.captured(1).trimmed();
+        const QString ids = canonicalMatch.captured(2).toLower();
+        return name + QStringLiteral(" \\n[**") + ids + QStringLiteral("**]");
+    }
+
+    // UI format: "Name [8086:7a62]" or "Name [**8086:7a62**]".
+    static const QRegularExpression uiRe(
+        QStringLiteral("^(.+?)\\s+\\[(?:\\*\\*)?([0-9a-fA-F]{4}:[0-9a-fA-F]{4})(?:\\*\\*)?\\]$"));
+    const auto uiMatch = uiRe.match(trimmed);
+    if (uiMatch.hasMatch()) {
+        const QString name = uiMatch.captured(1).trimmed();
+        const QString ids = uiMatch.captured(2).toLower();
+        return name + QStringLiteral(" \\n[**") + ids + QStringLiteral("**]");
+    }
+
+    return trimmed;
+}
+
+QString controllerForExport(const QString& rawController)
+{
+    const QStringList controllers = splitListItems(rawController, false);
+    if (controllers.isEmpty())
+        return QStringLiteral("-");
+
+    QStringList normalized;
+    normalized.reserve(controllers.size());
+    for (const QString& c : controllers) {
+        normalized << controllerForExportSingle(c);
+    }
+    return wrapCellPreservingBreaks(normalized.join(QStringLiteral(" \\n ")), 46);
+}
+
+QString listForExport(const QString& rawValue, int wrapWidth)
+{
+    const QStringList items = splitListItems(rawValue, true);
+    if (items.isEmpty())
+        return QStringLiteral("-");
+    return wrapCellPreservingBreaks(items.join(QStringLiteral(" \\n ")), wrapWidth);
+}
+}
 
 QString ReportEngine::generate(const ReportData& data)
 {
@@ -49,11 +192,13 @@ QString ReportEngine::generateDeviceGroup(const ReportData& data)
     s << "@table[width:21:45:15:19:width]\n";
     s << "@tr Подсистема @| Контроллер @| Интерфейс(ы) @| Драйвер\n";
     for (const auto& sub : data.subsystems) {
-        const QString ctrl = sub.controller.isEmpty() ? QStringLiteral("-") : sub.controller;
+        const QString ctrl = controllerForExport(sub.controller);
+        const QString interfaces = listForExport(sub.interfaces, 22);
+        const QString drivers = listForExport(sub.driver, 28);
         s << "@tr " << sub.name
           << " @| " << ctrl
-          << " @| " << sub.interfaces
-          << " @| " << sub.driver << "\n";
+          << " @| " << interfaces
+          << " @| " << drivers << "\n";
     }
     s << "@endtable\n\n";
 

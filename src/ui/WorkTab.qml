@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Bctl
 import QtQuick.Layouts
 
 Item {
@@ -34,6 +35,7 @@ Item {
     Connections {
         target: controller
         function onCurrentWorkStepIndexChanged() { root.syncFields() }
+        function onReportLoaded() { root.syncFields() }
     }
     Connections {
         target: controller.workStepModel
@@ -204,29 +206,54 @@ Item {
                 }
 
                 // Note field
-                TextArea {
-                    id: noteArea
+                Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 88
-                    Layout.maximumHeight: 120
-                    placeholderText: "Текст заметки"
-                    wrapMode: TextArea.Wrap
-                    font.pixelSize: 13
-                    color: "#374151"
-                    placeholderTextColor: "#9CA3AF"
-                    topPadding: 8
-                    leftPadding: 10
-                    rightPadding: 10
-                    bottomPadding: 8
-                    background: Rectangle {
-                        radius: 8
-                        color: "#F9FAFB"
-                        border.color: noteArea.activeFocus ? "#93C5FD" : "#E5E7EB"
-                        border.width: 1
+                    Layout.preferredHeight: 120
+                    Layout.minimumHeight: 88
+                    Layout.maximumHeight: 200
+                    radius: 8
+                    color: "#F9FAFB"
+                    border.color: noteArea.activeFocus ? "#93C5FD" : "#E5E7EB"
+                    border.width: 1
+                    clip: true
+
+                    ScrollView {
+                        id: noteScroll
+                        anchors.fill: parent
+                        clip: true
+                        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                        Bctl.TextArea {
+                            id: noteArea
+                            width: noteScroll.availableWidth
+                            wrapMode: TextArea.Wrap
+                            font.pixelSize: 13
+                            color: "#374151"
+                            topPadding: 8
+                            leftPadding: 10
+                            rightPadding: 10
+                            bottomPadding: 8
+                            background: null
+                            onActiveFocusChanged: {
+                                if (!activeFocus && total > 0)
+                                    controller.workStepModel.setNote(idx, text)
+                            }
+                        }
                     }
-                    onActiveFocusChanged: {
-                        if (!activeFocus && total > 0)
-                            controller.workStepModel.setNote(idx, text)
+
+                    Text {
+                        z: 1
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                            margins: 10
+                        }
+                        visible: noteArea.text.length === 0
+                        text: "Текст заметки"
+                        font.pixelSize: 13
+                        color: "#9CA3AF"
+                        wrapMode: Text.Wrap
                     }
                 }
             }

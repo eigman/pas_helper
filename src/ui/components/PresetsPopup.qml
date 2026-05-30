@@ -35,7 +35,7 @@ Item {
         anchors.fill: parent
         radius: 6
         color: btnHover.containsMouse || popup.visible ? "#F3F4F6" : "white"
-        border.color: popup.visible ? "#3B82F6" : "#E5E7EB"
+        border.color: popup.visible ? "#0EA5E9" : "#E5E7EB"
         border.width: 1
 
         RowLayout {
@@ -70,9 +70,9 @@ Item {
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
         background: Rectangle {
-            color: "#1E293B"
+            color: "#0369A1"
             radius: 8
-            border.color: "#334155"; border.width: 1
+            border.color: "#075985"; border.width: 1
         }
 
         contentItem: Column {
@@ -84,7 +84,7 @@ Item {
                 delegate: Rectangle {
                     width: parent.width; implicitHeight: 36
                     radius: 6
-                    color: itemMouse.containsMouse ? "#334155" : "transparent"
+                    color: itemMouse.containsMouse ? "#075985" : "transparent"
 
                     Label {
                         anchors.verticalCenter: parent.verticalCenter

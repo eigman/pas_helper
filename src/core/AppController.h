@@ -11,6 +11,7 @@
 #include "ExamplesManager.h"
 
 #include <QObject>
+#include <QTimer>
 #include <QString>
 #include <QStringList>
 
@@ -67,7 +68,7 @@ public:
     Q_INVOKABLE bool saveFile();
     Q_INVOKABLE bool saveFileAs(const QString& path);
     Q_INVOKABLE bool exportTxt(const QString& path);
-    Q_INVOKABLE void newReport();
+    Q_INVOKABLE bool createNewProject(const QString& selectedPath);
 
     // ── Subsystem operations ─────────────────────────────────────────────────
     Q_INVOKABLE void addSubsystem(const QString& name);
@@ -166,6 +167,7 @@ signals:
     void currentWorkStepIndexChanged();
     void workStepCountChanged();
     void pciStatusChanged();
+    void pciAssigned(int subsystemIndex);
     void errorOccurred(const QString& message);
     void reportLoaded();
 
@@ -176,6 +178,8 @@ private:
     void loadWorkProgress(const WorkProgressData& progress, int currentIndex);
     ProgressData collectProgressData() const;
     void resetWorkProgress();
+    void resetReportToDefaults();
+    static QString resolveProjectReportPath(const QString& selectedPath);
 
     ReportData       m_data;
     QString          m_currentFilePath;
@@ -191,4 +195,5 @@ private:
     PresetManager    m_presets;
     ExamplesManager  m_examples;
     QVariantList     m_recommendationBlocks;
+    QTimer           m_autoSaveTimer;
 };

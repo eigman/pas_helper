@@ -101,7 +101,7 @@ Item {
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
                                 background: Rectangle {
                                     color: "#F9FAFB"; radius: 6
-                                    border.color: ramField.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                    border.color: ramField.activeFocus ? "#0EA5E9" : "#E5E7EB"
                                     border.width: ramField.activeFocus ? 1.5 : 1
                                 }
                                 onEditingFinished: controller.deviceRam = text
@@ -218,7 +218,7 @@ Item {
                             background: Rectangle {
                                 color: "#F9FAFB"
                                 radius: 6
-                                border.color: osNoteArea.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                border.color: osNoteArea.activeFocus ? "#0EA5E9" : "#E5E7EB"
                                 border.width: osNoteArea.activeFocus ? 1.5 : 1
                             }
                             onEditingFinished: controller.osTestNote = text

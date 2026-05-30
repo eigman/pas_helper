@@ -98,6 +98,7 @@ qt_add_resources(ReportAssistant "appresources"
         resources/icons/remark-hint.svg
         resources/icons/remark-caution.svg
         resources/icons/remark-error.svg
+        resources/icons/app-icon.png
 )
 
 target_link_libraries(ReportAssistant PRIVATE

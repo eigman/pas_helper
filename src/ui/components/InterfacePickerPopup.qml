@@ -37,12 +37,12 @@ Item {
         id: btn
         anchors.fill: parent
         radius: 6
-        color: btnHover.containsMouse ? "#EFF6FF" : "transparent"
+        color: btnHover.containsMouse ? "#E0F2FE" : "transparent"
 
         Row {
             anchors.centerIn: parent; spacing: 4
-            Text { text: root.buttonLabel; font.pixelSize: 12; color: "#3B82F6"; anchors.verticalCenter: parent.verticalCenter }
-            Text { text: "＋"; font.pixelSize: 11; color: "#3B82F6"; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: root.buttonLabel; font.pixelSize: 12; color: "#0EA5E9"; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: "＋"; font.pixelSize: 11; color: "#0EA5E9"; anchors.verticalCenter: parent.verticalCenter }
         }
 
         HoverHandler { id: btnHover }
@@ -116,7 +116,7 @@ Item {
                                 anchors.right: controls.left; anchors.rightMargin: 16
                                 text: root.baseName(modelData)
                                 font.pixelSize: 14
-                                color: qty > 0 ? "#1D4ED8" : "#111827"
+                                color: qty > 0 ? "#0284C7" : "#111827"
                                 elide: Text.ElideRight
                             }
 
@@ -153,20 +153,20 @@ Item {
                                 Rectangle {
                                     width: 28; height: 28; radius: 6
                                     visible: qty > 0
-                                    color: "#EFF6FF"
+                                    color: "#E0F2FE"
                                     Text {
                                         anchors.centerIn: parent; text: qty
-                                        font.pixelSize: 14; font.weight: Font.Medium; color: "#1D4ED8"
+                                        font.pixelSize: 14; font.weight: Font.Medium; color: "#0284C7"
                                     }
                                 }
 
                                 // Plus
                                 Rectangle {
                                     width: 28; height: 28; radius: 6
-                                    color: plusHover.containsMouse ? "#DBEAFE" : "#EFF6FF"
+                                    color: plusHover.containsMouse ? "#BAE6FD" : "#E0F2FE"
                                     Text {
                                         anchors.centerIn: parent; text: "+"
-                                        font.pixelSize: 16; color: "#3B82F6"
+                                        font.pixelSize: 16; color: "#0EA5E9"
                                     }
                                     HoverHandler { id: plusHover }
                                     MouseArea {
@@ -195,7 +195,7 @@ Item {
 
                     Rectangle {
                         width: insertLbl.implicitWidth + 36; height: 38; radius: 8
-                        color: insertHover.containsMouse ? "#1D4ED8" : "#3B82F6"
+                        color: insertHover.containsMouse ? "#0284C7" : "#0EA5E9"
                         Text { id: insertLbl; anchors.centerIn: parent; text: "Вставить"; font.pixelSize: 14; color: "white" }
                         HoverHandler { id: insertHover }
                         MouseArea {

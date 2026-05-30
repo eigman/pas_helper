@@ -12,7 +12,7 @@ Rectangle {
     signal removeClicked()
 
     implicitHeight: 36
-    color: selected ? "#EFF6FF" : (rowHover.hovered ? "#F1F5F9" : "transparent")
+    color: selected ? "#E0F2FE" : (rowHover.hovered ? "#F1F5F9" : "transparent")
     radius: 6
 
     // Left selection indicator
@@ -20,7 +20,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
         width: 3; height: 20; radius: 2
-        color: "#3B82F6"
+        color: "#0EA5E9"
         visible: root.selected
     }
 
@@ -42,7 +42,7 @@ Rectangle {
         text: root.subsystemName
         font.pixelSize: 13
         font.weight: root.selected ? Font.Medium : Font.Normal
-        color: root.selected ? "#1D4ED8" : "#374151"
+        color: root.selected ? "#0284C7" : "#374151"
         elide: Text.ElideRight
     }
 

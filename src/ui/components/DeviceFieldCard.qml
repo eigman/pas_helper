@@ -49,7 +49,7 @@ Rectangle {
             background: Rectangle {
                 color: "#F9FAFB"
                 radius: 6
-                border.color: field.activeFocus ? "#3B82F6" : "#E5E7EB"
+                border.color: field.activeFocus ? "#0EA5E9" : "#E5E7EB"
                 border.width: field.activeFocus ? 1.5 : 1
             }
             onEditingFinished: root.fieldChanged(text)

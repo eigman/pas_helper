@@ -12,7 +12,7 @@ Item {
     property int subsystemIndex: -1
 
     signal openPciRequested()
-    signal saveAsRequested()
+    signal createProjectRequested()
 
     StackLayout {
         anchors.fill: parent
@@ -34,7 +34,7 @@ Item {
 
         // Page N+1: Recommendations
         RecommendationsEditor {
-            onSaveAsRequested: root.saveAsRequested()
+            onCreateProjectRequested: root.createProjectRequested()
         }
     }
 }

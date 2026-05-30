@@ -10,6 +10,14 @@ QString PciDevice::controllerString() const
     const QString name = deviceName.isEmpty()
                              ? QStringLiteral("Unknown [%1:%2]").arg(vendorId, deviceId)
                              : deviceName;
+    return name + QStringLiteral(" [") + vendorId + QLatin1Char(':') + deviceId + QLatin1Char(']');
+}
+
+QString PciDevice::controllerMarkupString() const
+{
+    const QString name = deviceName.isEmpty()
+                             ? QStringLiteral("Unknown [%1:%2]").arg(vendorId, deviceId)
+                             : deviceName;
     return name + QStringLiteral(" \\n[**") + vendorId + QLatin1Char(':') + deviceId + QStringLiteral("**]");
 }
 
@@ -17,6 +25,9 @@ PciAnalyzer::PciAnalyzer() = default;
 
 bool PciAnalyzer::loadPciIds(const QString& binaryDir)
 {
+    m_pciIdsLoaded = false;
+    m_vendors.clear();
+
     QStringList candidates;
     if (!binaryDir.isEmpty())
         candidates << QDir(binaryDir).filePath(QStringLiteral("resources/pci.ids"));
@@ -33,35 +44,38 @@ bool PciAnalyzer::loadPciIds(const QString& binaryDir)
         QTextStream in(&file);
         in.setEncoding(QStringConverter::Utf8);
 
+        m_vendors.clear();
+
         QString currentVendorId;
         VendorEntry currentVendor;
+        const QRegularExpression vendorRe(QStringLiteral("^([0-9a-fA-F]{4})\\s{2,}(.+)$"));
+        const QRegularExpression deviceRe(QStringLiteral("^\\t([0-9a-fA-F]{4})\\s{2,}(.+)$"));
 
         while (!in.atEnd()) {
-            QString line = in.readLine();
+            const QString line = in.readLine();
             if (line.startsWith(QLatin1Char('#')) || line.trimmed().isEmpty()) continue;
 
-            if (line.startsWith(QLatin1Char('\t'))) {
-                // Device line: "\tXXXX  Device Name"
-                if (line.startsWith(QLatin1String("\t\t"))) continue; // subsystem, skip
-                QString deviceLine = line.mid(1); // remove leading tab
-                const int spaceIdx = deviceLine.indexOf(QLatin1String("  "));
-                if (spaceIdx < 0) continue;
-                const QString did  = deviceLine.left(spaceIdx).toLower().trimmed();
-                const QString name = deviceLine.mid(spaceIdx + 2).trimmed();
-                if (!currentVendorId.isEmpty())
-                    m_vendors[currentVendorId].devices[did] = name;
-            } else {
-                // Vendor line: "XXXX  Vendor Name"
-                // Save previous vendor
-                if (!currentVendorId.isEmpty())
-                    m_vendors[currentVendorId] = currentVendor;
+            if (line.startsWith(QLatin1String("\t\t"))) continue; // Subsystem entries
 
-                const int spaceIdx = line.indexOf(QLatin1String("  "));
-                if (spaceIdx < 0) { currentVendorId.clear(); continue; }
-                currentVendorId = line.left(spaceIdx).toLower().trimmed();
-                currentVendor.name = line.mid(spaceIdx + 2).trimmed();
-                currentVendor.devices.clear();
+            if (line.startsWith(QLatin1Char('\t'))) {
+                const auto devMatch = deviceRe.match(line);
+                if (!devMatch.hasMatch() || currentVendorId.isEmpty()) continue;
+
+                const QString did = devMatch.captured(1).toLower();
+                const QString name = devMatch.captured(2).trimmed();
+                currentVendor.devices[did] = name;
+                continue;
             }
+
+            const auto vendorMatch = vendorRe.match(line);
+            if (!vendorMatch.hasMatch()) continue;
+
+            if (!currentVendorId.isEmpty())
+                m_vendors[currentVendorId] = currentVendor;
+
+            currentVendorId = vendorMatch.captured(1).toLower();
+            currentVendor.name = vendorMatch.captured(2).trimmed();
+            currentVendor.devices.clear();
         }
         // Save last vendor
         if (!currentVendorId.isEmpty())
@@ -88,11 +102,15 @@ QList<PciDevice> PciAnalyzer::parseDump(const QString& dumpText) const
     auto tryCommit = [&]() {
         if (!current.vendorId.isEmpty() && !current.deviceId.isEmpty()) {
             // Lookup device name if not already known
-            if (current.deviceName.isEmpty() || current.deviceName == QLatin1String("Unknown Unknown")) {
+            if (current.deviceName.isEmpty()
+                || current.deviceName.compare(QLatin1String("Unknown Unknown"), Qt::CaseInsensitive) == 0
+                || current.deviceName.compare(QLatin1String("Unknown"), Qt::CaseInsensitive) == 0) {
                 current.deviceName = lookupDevice(current.vendorId, current.deviceId);
             }
-            if (current.vendorName.isEmpty())
+            if (current.vendorName.isEmpty()
+                || current.vendorName.compare(QLatin1String("Unknown"), Qt::CaseInsensitive) == 0) {
                 current.vendorName = lookupVendor(current.vendorId);
+            }
 
             current.suggestedSubsystem = suggestSubsystem(current.classStr);
             result << current;
@@ -102,9 +120,11 @@ QList<PciDevice> PciAnalyzer::parseDump(const QString& dumpText) const
     };
 
     // Regex patterns for the QNX pci -vvv output
-    static const QRegularExpression reClass(QStringLiteral("^Class\\s+=\\s+(.+)$"));
-    static const QRegularExpression reVendor(QStringLiteral("^Vendor ID\\s+=\\s+([0-9a-fA-F]+)h,\\s*(.*)$"));
-    static const QRegularExpression reDevice(QStringLiteral("^Device ID\\s+=\\s+([0-9a-fA-F]+)h,\\s*(.*)$"));
+    static const QRegularExpression reClass(QStringLiteral("^Class\\s*=\\s*(.+)$"));
+    static const QRegularExpression reVendor(
+        QStringLiteral("^Vendor ID\\s*=\\s*([0-9a-fA-F]+)h(?:,\\s*(.*))?$"));
+    static const QRegularExpression reDevice(
+        QStringLiteral("^Device ID\\s*=\\s*([0-9a-fA-F]+)h(?:,\\s*(.*))?$"));
 
     for (const QString& rawLine : allLines) {
         const QString line = rawLine.trimmed();
@@ -131,7 +151,7 @@ QList<PciDevice> PciAnalyzer::parseDump(const QString& dumpText) const
             current.deviceId   = mDevice.captured(1).toLower();
             // Name from dump may be "Unknown Unknown" — we'll look it up
             const QString rawName = mDevice.captured(2).trimmed();
-            if (rawName != QLatin1String("Unknown Unknown") &&
+            if (rawName.compare(QLatin1String("Unknown Unknown"), Qt::CaseInsensitive) != 0 &&
                 !rawName.trimmed().isEmpty())
             {
                 current.deviceName = rawName;

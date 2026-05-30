@@ -17,12 +17,22 @@ Item {
         return s["icon"] || controller.iconForSubsystem(s["name"] || "")
     }
 
+    function controllerToEditorText(raw) {
+        let text = (raw || "").trim()
+        if (text === "")
+            return ""
+
+        text = text.replace(/\s*\\n\s*\[\*\*([0-9a-fA-F]{4}:[0-9a-fA-F]{4})\*\*\]\s*$/i, " [$1]")
+        text = text.replace(/\[\*\*([0-9a-fA-F]{4}:[0-9a-fA-F]{4})\*\*\]/ig, "[$1]")
+        return text.replace(/\s+/g, " ").trim()
+    }
+
     function reload() {
         if (subsystemIndex < 0) return
         root.checkItemsList = controller.subsystemModel.getSubsystem(subsystemIndex)["checkItems"] || []
         const s = controller.subsystemModel.getSubsystem(subsystemIndex)
         nameField.text       = (s["name"]       || "").replace(/ ?\\n ?/g, ' ').trim()
-        controllerArea.text  = s["controller"]  || ""
+        controllerArea.text  = controllerToEditorText(s["controller"] || "")
         ifaceField.text      = (s["interfaces"] || "").replace(/ ?\\n ?/g, ' ')
         driverField.text     = s["driver"]      || ""
         noteArea.text        = s["testNote"]    || ""
@@ -47,10 +57,15 @@ Item {
 
     Connections {
         target: controller.subsystemModel
-        function onDataChanged() {
-            if (root.subsystemIndex >= 0)
-                root.checkItemsList = controller.subsystemModel.getSubsystem(root.subsystemIndex)["checkItems"] || []
+        function onDataChanged(topLeft, bottomRight) {
+            if (root.subsystemIndex < 0)
+                return
+            if (topLeft.row <= root.subsystemIndex && bottomRight.row >= root.subsystemIndex)
+                root.reload()
         }
+        function onRowsInserted() { root.reload() }
+        function onRowsRemoved() { root.reload() }
+        function onModelReset() { root.reload() }
     }
 
     property string currentResult: "Успешно"
@@ -165,7 +180,7 @@ Item {
                             leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
                             background: Rectangle {
                                 color: "#F9FAFB"; radius: 6
-                                border.color: nameField.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                border.color: nameField.activeFocus ? "#0EA5E9" : "#E5E7EB"
                                 border.width: nameField.activeFocus ? 1.5 : 1
                             }
                             onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "name", text)
@@ -203,10 +218,14 @@ Item {
                             topPadding: 8; leftPadding: 10; rightPadding: 10; bottomPadding: 8
                             background: Rectangle {
                                 color: "#F9FAFB"; radius: 6
-                                border.color: controllerArea.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                border.color: controllerArea.activeFocus ? "#0EA5E9" : "#E5E7EB"
                                 border.width: controllerArea.activeFocus ? 1.5 : 1
                             }
-                            onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "controller", text)
+                            onEditingFinished: {
+                                const normalized = root.controllerToEditorText(text)
+                                controller.subsystemModel.setField(root.subsystemIndex, "controller", normalized)
+                                text = normalized
+                            }
                         }
 
                         // PCI link
@@ -214,8 +233,8 @@ Item {
                             implicitHeight: 32
                             implicitWidth: pciLinkRow.implicitWidth + 16
                             radius: 6
-                            color: pciLinkHover.containsMouse ? "#EFF6FF" : "transparent"
-                            border.color: pciLinkHover.containsMouse ? "#BFDBFE" : "transparent"
+                            color: pciLinkHover.containsMouse ? "#E0F2FE" : "transparent"
+                            border.color: pciLinkHover.containsMouse ? "#BAE6FD" : "transparent"
                             border.width: 1
 
                             RowLayout {
@@ -231,7 +250,7 @@ Item {
                                 Label {
                                     text: "Открыть PCI анализатор"
                                     font.pixelSize: 12
-                                    color: pciLinkHover.containsMouse ? "#1D4ED8" : "#6B7280"
+                                    color: pciLinkHover.containsMouse ? "#0284C7" : "#6B7280"
                                 }
                             }
 
@@ -275,7 +294,7 @@ Item {
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
                                 background: Rectangle {
                                     color: "#F9FAFB"; radius: 6
-                                    border.color: ifaceField.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                    border.color: ifaceField.activeFocus ? "#0EA5E9" : "#E5E7EB"
                                     border.width: ifaceField.activeFocus ? 1.5 : 1
                                 }
                                 onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "interfaces", text)
@@ -330,7 +349,7 @@ Item {
                                 leftPadding: 10; rightPadding: 10; topPadding: 8; bottomPadding: 8
                                 background: Rectangle {
                                     color: "#F9FAFB"; radius: 6
-                                    border.color: driverField.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                    border.color: driverField.activeFocus ? "#0EA5E9" : "#E5E7EB"
                                     border.width: driverField.activeFocus ? 1.5 : 1
                                 }
                                 onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "driver", text)
@@ -517,7 +536,7 @@ Item {
                             topPadding: 8; leftPadding: 10; rightPadding: 10; bottomPadding: 8
                             background: Rectangle {
                                 color: "#F9FAFB"; radius: 6
-                                border.color: noteArea.activeFocus ? "#3B82F6" : "#E5E7EB"
+                                border.color: noteArea.activeFocus ? "#0EA5E9" : "#E5E7EB"
                                 border.width: noteArea.activeFocus ? 1.5 : 1
                             }
                             onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "testNote", text)
@@ -608,7 +627,7 @@ Item {
                                         height: 20
                                         radius: 10
                                         color: {
-                                            if (modelData.key === "hint")    return parent.isOn ? "#3B82F6" : "#D1D5DB"
+                                            if (modelData.key === "hint")    return parent.isOn ? "#0EA5E9" : "#D1D5DB"
                                             if (modelData.key === "caution") return parent.isOn ? "#D97706" : "#D1D5DB"
                                             return parent.isOn ? "#DC2626" : "#D1D5DB"
                                         }
@@ -661,8 +680,8 @@ Item {
                             font.pixelSize: 14; color: "#111827"
                             topPadding: 8; leftPadding: 10; rightPadding: 10; bottomPadding: 8
                             background: Rectangle {
-                                color: "#EFF6FF"; radius: 6
-                                border.color: hintArea.activeFocus ? "#3B82F6" : "#BFDBFE"
+                                color: "#E0F2FE"; radius: 6
+                                border.color: hintArea.activeFocus ? "#0EA5E9" : "#BAE6FD"
                                 border.width: 1
                             }
                             onEditingFinished: controller.subsystemModel.setField(root.subsystemIndex, "hintText", text)

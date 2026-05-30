@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QDir>
+#include <QIcon>
 #include <QQuickStyle>
 #include <QQuickWindow>
 
@@ -13,6 +14,7 @@ int main(int argc, char* argv[])
     app.setApplicationName(QStringLiteral("Report Assistant"));
     app.setApplicationVersion(QStringLiteral("0.1.0"));
     app.setOrganizationName(QStringLiteral("ReportAssistant"));
+    app.setWindowIcon(QIcon(QStringLiteral(":/resources/icons/app-icon.png")));
 
     // Use Material style
     QQuickStyle::setStyle(QStringLiteral("Material"));

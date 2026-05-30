@@ -37,8 +37,8 @@ ApplicationWindow {
     }
 
     Material.theme: Material.Light
-    Material.accent: Material.Blue
-    Material.primary: Material.BlueGrey
+    Material.accent: Material.Cyan
+    Material.primary: Material.LightBlue
 
     // ── State ─────────────────────────────────────────────────────────────────
     property int mainTabIndex: 0
@@ -47,6 +47,16 @@ ApplicationWindow {
 
     // Drag support for frameless window
     property point dragOrigin
+
+    Shortcut {
+        sequence: StandardKey.Save
+        onActivated: {
+            if (controller.currentFilePath !== "")
+                controller.saveFile()
+            else
+                newProjectDialog.open()
+        }
+    }
 
     // ── Root layout: titlebar + body ──────────────────────────────────────────
     ColumnLayout {
@@ -58,7 +68,7 @@ ApplicationWindow {
             id: titleBar
             Layout.fillWidth: true
             implicitHeight: 44
-            color: "#1E293B"
+            color: "#0369A1"
 
             // Drag to move window
             MouseArea {
@@ -83,7 +93,7 @@ ApplicationWindow {
 
                 // App icon + name
                 Rectangle {
-                    width: 26; height: 26; radius: 6; color: "#3B82F6"
+                    width: 26; height: 26; radius: 6; color: "#0EA5E9"
                     Label {
                         anchors.centerIn: parent
                         text: "⚙"; color: "white"; font.pixelSize: 13
@@ -91,7 +101,7 @@ ApplicationWindow {
                 }
 
                 Label {
-                    text: "Системное тестирование"
+                    text: "ПАС"
                     color: "white"; font.pixelSize: 13; font.weight: Font.Medium
                     leftPadding: 10
                 }
@@ -101,7 +111,7 @@ ApplicationWindow {
                     id: fileMenuBtn
                     implicitWidth: fileMenuLabel.implicitWidth + 24
                     implicitHeight: 28; radius: 5
-                    color: fileMenuHover.containsMouse || fileMenuPopup.visible ? "#334155" : "transparent"
+                    color: fileMenuHover.containsMouse || fileMenuPopup.visible ? "#075985" : "transparent"
                     Layout.leftMargin: 8
 
                     RowLayout {
@@ -110,10 +120,10 @@ ApplicationWindow {
                         spacing: 5
                         Label {
                             id: fileMenuLabel
-                            text: "Файл"; color: "#CBD5E1"; font.pixelSize: 12
+                            text: "Файл"; color: "#F8FAFC"; font.pixelSize: 13; font.weight: Font.Medium
                         }
                         Label {
-                            text: "▾"; color: "#64748B"; font.pixelSize: 9
+                            text: "▾"; color: "#E2E8F0"; font.pixelSize: 10
                         }
                     }
 
@@ -133,7 +143,7 @@ ApplicationWindow {
                 // Separator
                 Rectangle {
                     width: 1; implicitHeight: 20
-                    color: "#334155"
+                    color: "#075985"
                     Layout.leftMargin: 8
                 }
 
@@ -147,14 +157,14 @@ ApplicationWindow {
                         delegate: Rectangle {
                             implicitWidth: tabLbl.implicitWidth + 20
                             implicitHeight: 28; radius: 5
-                            color: mainTabIndex === index ? "white" : (tabHover.containsMouse ? "#334155" : "transparent")
+                            color: mainTabIndex === index ? "white" : (tabHover.containsMouse ? "#075985" : "transparent")
 
                             Label {
                                 id: tabLbl
                                 anchors.centerIn: parent
-                                text: modelData; font.pixelSize: 12
-                                font.weight: mainTabIndex === index ? Font.Medium : Font.Normal
-                                color: mainTabIndex === index ? "#1E293B" : "#94A3B8"
+                                text: modelData; font.pixelSize: 13
+                                font.weight: mainTabIndex === index ? Font.DemiBold : Font.Medium
+                                color: mainTabIndex === index ? "#0369A1" : "#F1F5F9"
                             }
 
                             HoverHandler { id: tabHover }
@@ -168,6 +178,21 @@ ApplicationWindow {
                 }
 
                 Item { Layout.fillWidth: true }
+
+                Rectangle {
+                    id: saveStateDot
+                    width: 10
+                    height: 10
+                    radius: 5
+                    color: controller.isModified ? "#D97706" : "#22C55E"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.rightMargin: 10
+
+                    HoverHandler { id: saveStateHover }
+                    ToolTip.visible: saveStateHover.hovered
+                    ToolTip.delay: 250
+                    ToolTip.text: controller.isModified ? "Не сохранено" : "Сохранено"
+                }
 
                 // Window controls
                 Row {
@@ -183,7 +208,7 @@ ApplicationWindow {
                             width: 40; height: 44
                             color: {
                                 if (modelData.action === "close" && wcHover.containsMouse) return "#DC2626"
-                                return wcHover.containsMouse ? "#334155" : "transparent"
+                                return wcHover.containsMouse ? "#075985" : "transparent"
                             }
                             Label {
                                 anchors.centerIn: parent
@@ -356,46 +381,6 @@ ApplicationWindow {
                 Layout.fillWidth: true; Layout.fillHeight: true
                 spacing: 0
 
-                // Status bar
-                Rectangle {
-                    Layout.fillWidth: true; implicitHeight: 32
-                    color: "white"
-
-                    Rectangle {
-                        anchors.bottom: parent.bottom
-                        width: parent.width; height: 1; color: "#E5E7EB"
-                    }
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 20; anchors.rightMargin: 16; spacing: 12
-
-                        Label {
-                            text: controller.currentFilePath !== ""
-                                  ? controller.currentFilePath : "Файл не открыт"
-                            elide: Text.ElideMiddle; Layout.fillWidth: true
-                            font.pixelSize: 11; color: "#64748B"
-                        }
-
-                        Label {
-                            text: controller.pciStatusMessage
-                            font.pixelSize: 11
-                            color: controller.pciIdsLoaded ? "#16A34A" : "#D97706"
-                        }
-
-                        Rectangle {
-                            visible: controller.isModified
-                            implicitWidth: modLbl.implicitWidth + 16
-                            implicitHeight: 18; radius: 9; color: "#FEF3C7"
-
-                            Label {
-                                id: modLbl; anchors.centerIn: parent
-                                text: "Не сохранено"; font.pixelSize: 10; color: "#D97706"
-                            }
-                        }
-                    }
-                }
-
                 StackLayout {
                     Layout.fillWidth: true; Layout.fillHeight: true
                     currentIndex: mainTabIndex
@@ -406,7 +391,7 @@ ApplicationWindow {
                         pageIndex: reportPageIndex
                         subsystemIndex: selectedSubsystemIndex
                         onOpenPciRequested: pciDrawer.open()
-                        onSaveAsRequested:  saveAsDialog.open()
+                        onCreateProjectRequested: newProjectDialog.open()
                     }
                 }
             }
@@ -689,9 +674,9 @@ ApplicationWindow {
         }
 
         background: Rectangle {
-            color: "#1E293B"
+            color: "#FFFFFF"
             radius: 8
-            border.color: "#334155"; border.width: 1
+            border.color: "#D1D5DB"; border.width: 1
             layer.enabled: true
             layer.effect: null
         }
@@ -716,7 +701,7 @@ ApplicationWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left; anchors.right: parent.right
                 anchors.leftMargin: 4; anchors.rightMargin: 4
-                height: 1; color: "#334155"
+                height: 1; color: "#E5E7EB"
             }
 
             Rectangle {
@@ -724,7 +709,7 @@ ApplicationWindow {
                 anchors.fill: parent
                 radius: 6
                 color: !parent.disabled && itemMouse.containsMouse
-                       ? (parent.danger ? "#7F1D1D" : "#334155")
+                       ? (parent.danger ? "#FEE2E2" : "#F1F5F9")
                        : "transparent"
 
                 Label {
@@ -733,8 +718,8 @@ ApplicationWindow {
                     text: label
                     font.pixelSize: 13
                     color: parent.parent.disabled
-                           ? "#4B5563"
-                           : (parent.parent.danger ? "#FCA5A5" : "#E2E8F0")
+                           ? "#9CA3AF"
+                           : (parent.parent.danger ? "#B91C1C" : "#111827")
                 }
 
                 MouseArea {
@@ -757,7 +742,7 @@ ApplicationWindow {
 
             FileMenuItem {
                 label: "Новый отчёт"
-                onTriggered: controller.newReport()
+                onTriggered: newProjectDialog.open()
             }
             FileMenuItem {
                 label: "Открыть..."
@@ -766,23 +751,13 @@ ApplicationWindow {
             FileMenuItem { separator: true }
             FileMenuItem {
                 label: "Сохранить"
-                disabled: !controller.isModified
-                onTriggered: controller.currentFilePath === "" ? saveAsDialog.open() : controller.saveFile()
-            }
-            FileMenuItem {
-                label: "Сохранить как..."
-                onTriggered: saveAsDialog.open()
+                disabled: !controller.isModified || controller.currentFilePath === ""
+                onTriggered: controller.saveFile()
             }
             FileMenuItem { separator: true }
             FileMenuItem {
                 label: "Экспортировать TXT..."
                 onTriggered: exportDialog.open()
-            }
-            FileMenuItem { separator: true }
-            FileMenuItem {
-                label: "Выход"
-                danger: true
-                onTriggered: Qt.quit()
             }
         }
     }
@@ -930,14 +905,17 @@ ApplicationWindow {
 
     // ── File dialogs ──────────────────────────────────────────────────────────
     FileDialog {
+        id: newProjectDialog
+        title: "Новый проект"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["Проект (*.txt)", "Все файлы (*)"]
+        defaultSuffix: "txt"
+        onAccepted: controller.createNewProject(selectedFile.toString().replace("file://", ""))
+    }
+    FileDialog {
         id: openDialog; title: "Открыть отчёт"
         nameFilters: ["Отчёт (*.txt)", "Все файлы (*)"]
         onAccepted: controller.openFile(selectedFile.toString().replace("file://", ""))
-    }
-    FileDialog {
-        id: saveAsDialog; title: "Сохранить отчёт как"
-        fileMode: FileDialog.SaveFile; nameFilters: ["Отчёт (*.txt)"]; defaultSuffix: "txt"
-        onAccepted: controller.saveFileAs(selectedFile.toString().replace("file://", ""))
     }
     FileDialog {
         id: exportDialog; title: "Экспортировать TXT"
@@ -958,4 +936,5 @@ ApplicationWindow {
         Label { id: toastLbl; color: "white"; font.pixelSize: 13 }
         Timer { running: errorToast.visible; interval: 4000; onTriggered: errorToast.close() }
     }
+
 }
